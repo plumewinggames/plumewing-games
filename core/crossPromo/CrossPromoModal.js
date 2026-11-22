@@ -1,0 +1,98 @@
+/**
+ * CrossPromoModal - Zero-CAC Cross-Promotion Engine.
+ * Recycles players between portfolio titles at $0 acquisition cost.
+ */
+export class CrossPromoModal {
+  constructor() {
+    this.games = [
+      {
+        id: 'track-a',
+        title: 'Notebook Flight: Manta Ray',
+        tagline: 'Glide through sunken bioluminescent ruins & the void',
+        track: 'Track A (3D Three.js)',
+        url: '/track-a-flight/index.html',
+        badge: 'Flagship 3D',
+        color: '#06b6d4'
+      },
+      {
+        id: 'track-b',
+        title: 'Featherweight: Caveman Chase',
+        tagline: 'Outrun the relentless mallet slamming prehistoric beast',
+        track: 'Track B (2.5D Canvas)',
+        url: '/track-b-chase/index.html',
+        badge: 'Action Slapstick',
+        color: '#f97316'
+      }
+    ];
+  }
+
+  showPortfolioModal(currentGameId) {
+    const existing = document.getElementById('cross-promo-modal');
+    if (existing) existing.remove();
+
+    const overlay = document.createElement('div');
+    overlay.id = 'cross-promo-modal';
+    overlay.style.cssText = `
+      position: fixed; inset: 0; background: rgba(0,0,0,0.85); backdrop-filter: blur(8px);
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      z-index: 99999; color: #fff; font-family: system-ui, sans-serif; padding: 16px;
+    `;
+
+    const otherGames = this.games.filter(g => g.id !== currentGameId);
+
+    overlay.innerHTML = `
+      <div style="background: #0f172a; border: 1px solid #334155; border-radius: 16px; max-width: 440px; width: 100%; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
+        <div style="display: flex; justify-content: space-between; align-items: center; margin-bottom: 16px;">
+          <div>
+            <h3 style="margin: 0; font-size: 18px; font-weight: 700; color: #f8fafc;">More Games</h3>
+            <span style="font-size: 11px; color: #94a3b8;">Discover more free web & mobile titles</span>
+          </div>
+          <button id="close-cross-promo" style="background: #1e293b; border: none; color: #94a3b8; width: 32px; height: 32px; border-radius: 50%; font-size: 16px; cursor: pointer;">✕</button>
+        </div>
+
+        <div style="display: flex; flex-direction: column; gap: 12px;">
+          ${this.games.map(g => `
+            <div style="background: #1e293b; border: 1px solid ${g.id === currentGameId ? '#475569' : g.color}; border-radius: 12px; padding: 14px; display: flex; align-items: center; justify-content: space-between; ${g.id === currentGameId ? 'opacity: 0.6;' : ''}">
+              <div style="flex: 1; padding-right: 12px;">
+                <div style="display: flex; align-items: center; gap: 8px; margin-bottom: 4px;">
+                  <span style="font-weight: 700; font-size: 14px; color: #f8fafc;">${g.title}</span>
+                  <span style="font-size: 10px; background: ${g.color}; color: #000; font-weight: bold; padding: 2px 6px; border-radius: 4px;">${g.badge}</span>
+                </div>
+                <div style="font-size: 12px; color: #94a3b8;">${g.tagline}</div>
+              </div>
+              <div>
+                ${g.id === currentGameId ? 
+                  '<span style="font-size: 11px; color: #64748b; font-weight: 600;">PLAYING NOW</span>' : 
+                  `<a href="${g.url}" style="background: ${g.color}; color: #000; font-weight: 700; font-size: 12px; text-decoration: none; padding: 8px 14px; border-radius: 8px; display: inline-block;">PLAY</a>`
+                }
+              </div>
+            </div>
+          `).join('')}
+        </div>
+      </div>
+    `;
+
+    document.body.appendChild(overlay);
+    document.getElementById('close-cross-promo').onclick = () => overlay.remove();
+  }
+
+  createGameOverBanner(currentGameId) {
+    const targetGame = this.games.find(g => g.id !== currentGameId) || this.games[0];
+    const banner = document.createElement('div');
+    banner.style.cssText = `
+      margin-top: 14px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
+      border: 1px solid ${targetGame.color}; border-radius: 10px; padding: 10px 14px;
+      display: flex; align-items: center; justify-content: space-between; cursor: pointer;
+    `;
+    banner.innerHTML = `
+      <div style="text-align: left;">
+        <div style="font-size: 10px; color: ${targetGame.color}; font-weight: bold; text-transform: uppercase;">Next Recommended Title</div>
+        <div style="font-size: 13px; font-weight: 700; color: #fff;">${targetGame.title}</div>
+      </div>
+      <a href="${targetGame.url}" style="background: ${targetGame.color}; color: #000; font-weight: bold; font-size: 11px; text-decoration: none; padding: 6px 12px; border-radius: 6px;">PLAY</a>
+    `;
+    return banner;
+  }
+}
+
+export const crossPromo = new CrossPromoModal();

@@ -1,0 +1,107 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
+  <title>Modular Multi-Game Portfolio Studio</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; }
+    body {
+      background: #020617; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif;
+      min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px;
+    }
+    .header { text-align: center; margin-bottom: 32px; max-width: 640px; }
+    .header h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #38bdf8 0%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header p { color: #94a3b8; font-size: 14px; margin-top: 8px; line-height: 1.5; }
+
+    .stats-card {
+      background: #0f172a; border: 1px solid #1e293b; border-radius: 12px; padding: 12px 24px;
+      display: flex; gap: 24px; margin-bottom: 28px; box-shadow: 0 4px 6px -1px rgba(0,0,0,0.4);
+    }
+    .stat-item { text-align: center; }
+    .stat-val { font-size: 20px; font-weight: 800; }
+    .stat-lbl { font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; }
+
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; max-width: 800px; }
+    .game-card {
+      background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 20px;
+      display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s;
+    }
+    .game-card:hover { transform: translateY(-3px); border-color: #38bdf8; }
+    .badge {
+      display: inline-block; font-size: 10px; font-weight: 800; text-transform: uppercase;
+      padding: 4px 8px; border-radius: 6px; margin-bottom: 12px;
+    }
+    .badge-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
+    .badge-orange { background: rgba(249, 115, 22, 0.15); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.3); }
+    .game-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+    .game-desc { font-size: 13px; color: #94a3b8; line-height: 1.4; margin-bottom: 18px; flex: 1; }
+    .play-btn {
+      display: block; text-align: center; text-decoration: none; padding: 12px; border-radius: 10px;
+      font-weight: 700; font-size: 14px; transition: opacity 0.2s;
+    }
+    .play-btn-blue { background: #38bdf8; color: #020617; }
+    .play-btn-orange { background: #f97316; color: #020617; }
+    .play-btn:active { opacity: 0.8; }
+
+    .footer { margin-top: 40px; text-align: center; font-size: 12px; color: #475569; }
+  </style>
+</head>
+<body>
+  <div class="header">
+    <h1>Modular Multi-Game Portfolio</h1>
+    <p>$0 Upfront Cost Architecture • Unified Web Engines • Zero-CAC Traffic Cross-Promotion</p>
+  </div>
+
+  <div class="stats-card">
+    <div class="stat-item">
+      <div id="stat-pearls" class="stat-val" style="color: #38bdf8;">0</div>
+      <div class="stat-lbl">Track A Pearls</div>
+    </div>
+    <div class="stat-item" style="border-left: 1px solid #1e293b; padding-left: 24px;">
+      <div id="stat-berries" class="stat-val" style="color: #facc15;">0</div>
+      <div class="stat-lbl">Track B Berries</div>
+    </div>
+    <div class="stat-item" style="border-left: 1px solid #1e293b; padding-left: 24px;">
+      <div class="stat-val" style="color: #22c55e;">$0.00</div>
+      <div class="stat-lbl">Burn Rate</div>
+    </div>
+  </div>
+
+  <div class="grid">
+    <!-- Track A Card -->
+    <div class="game-card">
+      <div>
+        <span class="badge badge-blue">Track A • Three.js WebGL</span>
+        <div class="game-title">Notebook Arcade: 3D Flight</div>
+        <div class="game-desc">
+          Universal forward-flight engine with bloom post-processing, frame-interpolated gate crossing collision, and 10 swappable worlds (Manta Ray Flagship, Nano Drift, Souq Glider, Gorge Rush, Pripyat, Tide Bloom, The Void).
+        </div>
+      </div>
+      <a href="/track-a-flight/index.html" class="play-btn play-btn-blue">Launch 3D Flight (10 Arenas)</a>
+    </div>
+
+    <!-- Track B Card -->
+    <div class="game-card">
+      <div>
+        <span class="badge badge-orange">Track B • HTML5 Canvas 60 FPS</span>
+        <div class="game-title">Featherweight: Caveman Chase</div>
+        <div class="game-desc">
+          2.5D Slapstick action-chase across 3 depth lanes with a 6-layer parallax stack. Relentless Caveman AI continuously slams stone mallet triggering camera trauma shake and expanding shockwaves. 6 playable animals across 12 levels.
+        </div>
+      </div>
+      <a href="/track-b-chase/index.html" class="play-btn play-btn-orange">Launch Caveman Chase (6 Animals)</a>
+    </div>
+  </div>
+
+  <div class="footer">
+    Antigravity AI Multi-Agent Pipeline: Architect • World-Builder • QA Critic • Monetization Specialist
+  </div>
+
+  <script type="module">
+    import { economy } from './core/economy/EconomyManager.js';
+    document.getElementById('stat-pearls').textContent = economy.getPearls();
+    document.getElementById('stat-berries').textContent = economy.getGoldenBerries();
+  </script>
+</body>
+</html>
