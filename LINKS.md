@@ -1,6 +1,10 @@
 # 🎮 PlumeWing Games — Master Link Directory & Access Hub
 
-Keep this file bookmarked! All access links for your games—both locally, on your mobile network, and on the cloud—are permanently recorded here.
+> 🚀 **LIVE PUBLIC MOBILE LINK (ACTIVE NOW - Works on 4G / Wi-Fi anywhere):**
+> * **Hub:** [https://bd9eb3eed495b4.app.lhr.life](https://bd9eb3eed495b4.app.lhr.life)
+> * **Puff Guard:** [https://bd9eb3eed495b4.app.lhr.life/puff-guard/index.html](https://bd9eb3eed495b4.app.lhr.life/puff-guard/index.html)
+> * **Track A (3D Flight):** [https://bd9eb3eed495b4.app.lhr.life/track-a-flight/index.html](https://bd9eb3eed495b4.app.lhr.life/track-a-flight/index.html)
+> * **Track B (Caveman Chase):** [https://bd9eb3eed495b4.app.lhr.life/track-b-chase/index.html](https://bd9eb3eed495b4.app.lhr.life/track-b-chase/index.html)
 
 ---
 
