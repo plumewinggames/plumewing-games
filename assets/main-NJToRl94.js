@@ -1,0 +1,1 @@
+import{e as n}from"./EconomyManager-LkcXh6lF.js";const e=document.getElementById("stat-pearls");e&&(e.textContent=n.getPearls());const t=document.getElementById("stat-berries");t&&(t.textContent=n.getGoldenBerries());
