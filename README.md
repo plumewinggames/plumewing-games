@@ -1,5 +1,7 @@
 # PlumeWing Games & Amazonia Growth Studio
 
+> 📌 **Master Link Directory:** See [LINKS.md](LINKS.md) for all local, offline, and cloud game URLs.
+
 Official modular multi-game portfolio and brand growth engine deployed on Netlify.
 
 ---

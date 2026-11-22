@@ -7,7 +7,9 @@
   "scripts": {
     "dev": "vite --host",
     "build": "vite build",
-    "preview": "vite preview"
+    "preview": "vite preview",
+    "test:deploy": "node scripts/test-deployment.js",
+    "serve:offline": "node scripts/serve-offline.js"
   },
   "dependencies": {
     "three": "^0.160.0"
