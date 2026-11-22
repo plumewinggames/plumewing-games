@@ -6,13 +6,22 @@ export class CrossPromoModal {
   constructor() {
     this.games = [
       {
+        id: 'puff-guard',
+        title: 'Puff Guard: Defenders of the Reef',
+        tagline: 'Defend 5 progressive coral reefs with asymmetric divers',
+        track: 'Aquatic Survival (HTML5 60 FPS)',
+        url: '/puff-guard/index.html',
+        badge: 'NEW FLAGSHIP',
+        color: '#06b6d4'
+      },
+      {
         id: 'track-a',
         title: 'Notebook Flight: Manta Ray',
         tagline: 'Glide through sunken bioluminescent ruins & the void',
         track: 'Track A (3D Three.js)',
         url: '/track-a-flight/index.html',
         badge: 'Flagship 3D',
-        color: '#06b6d4'
+        color: '#38bdf8'
       },
       {
         id: 'track-b',
@@ -37,8 +46,6 @@ export class CrossPromoModal {
       display: flex; flex-direction: column; align-items: center; justify-content: center;
       z-index: 99999; color: #fff; font-family: system-ui, sans-serif; padding: 16px;
     `;
-
-    const otherGames = this.games.filter(g => g.id !== currentGameId);
 
     overlay.innerHTML = `
       <div style="background: #0f172a; border: 1px solid #334155; border-radius: 16px; max-width: 440px; width: 100%; padding: 20px; box-shadow: 0 20px 25px -5px rgba(0,0,0,0.5);">
@@ -74,24 +81,6 @@ export class CrossPromoModal {
 
     document.body.appendChild(overlay);
     document.getElementById('close-cross-promo').onclick = () => overlay.remove();
-  }
-
-  createGameOverBanner(currentGameId) {
-    const targetGame = this.games.find(g => g.id !== currentGameId) || this.games[0];
-    const banner = document.createElement('div');
-    banner.style.cssText = `
-      margin-top: 14px; background: linear-gradient(135deg, #1e293b 0%, #0f172a 100%);
-      border: 1px solid ${targetGame.color}; border-radius: 10px; padding: 10px 14px;
-      display: flex; align-items: center; justify-content: space-between; cursor: pointer;
-    `;
-    banner.innerHTML = `
-      <div style="text-align: left;">
-        <div style="font-size: 10px; color: ${targetGame.color}; font-weight: bold; text-transform: uppercase;">Next Recommended Title</div>
-        <div style="font-size: 13px; font-weight: 700; color: #fff;">${targetGame.title}</div>
-      </div>
-      <a href="${targetGame.url}" style="background: ${targetGame.color}; color: #000; font-weight: bold; font-size: 11px; text-decoration: none; padding: 6px 12px; border-radius: 6px;">PLAY</a>
-    `;
-    return banner;
   }
 }
 

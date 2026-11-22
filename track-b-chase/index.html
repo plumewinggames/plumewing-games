@@ -129,33 +129,6 @@
     </div>
   </div>
 
-  <script type="module">
-    import { ChaseEngine } from './src/ChaseEngine.js';
-    import { ANIMAL_CONFIGS } from './src/animals/AnimalRegistry.js';
-    import { crossPromo } from '../core/crossPromo/CrossPromoModal.js';
-
-    const engine = new ChaseEngine('chase-canvas');
-    engine.start();
-
-    // Animal Selector
-    document.getElementById('animal-select').addEventListener('change', (e) => {
-      engine.animalConfig = ANIMAL_CONFIGS[e.target.value];
-      engine.animal.hearts = engine.animalConfig.hearts;
-    });
-
-    // Revive & Restart
-    document.getElementById('chase-revive-btn').addEventListener('click', () => {
-      engine.attemptRevive();
-    });
-
-    document.getElementById('chase-restart-btn').addEventListener('click', () => {
-      location.reload();
-    });
-
-    // Zero-CAC Cross Promo
-    document.getElementById('chase-more-games').addEventListener('click', () => {
-      crossPromo.showPortfolioModal('track-b');
-    });
-  </script>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>

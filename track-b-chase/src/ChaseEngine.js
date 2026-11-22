@@ -160,6 +160,7 @@ export class ChaseEngine {
 
   start() {
     sound.init();
+    ads.gameplayStart();
     this.isRunning = true;
     this.lastTime = performance.now();
     this.loop = this.loop.bind(this);
@@ -346,6 +347,7 @@ export class ChaseEngine {
 
   triggerGameOver(reason) {
     this.isRunning = false;
+    ads.gameplayStop();
     economy.recordScore('chase', this.currentLevel.id, this.score);
 
     const modal = document.getElementById('chase-over-modal');
@@ -367,6 +369,8 @@ export class ChaseEngine {
 
   triggerWin() {
     this.isRunning = false;
+    ads.gameplayStop();
+    ads.happyTime();
     economy.unlockLevel(this.currentLevel.id);
     economy.recordScore('chase', this.currentLevel.id, this.score);
     alert(`🎉 Stage Cleared! Distance: ${Math.floor(this.distance)}m!`);
@@ -382,6 +386,7 @@ export class ChaseEngine {
       this.caveman.x = Math.max(20, this.caveman.x - 140); // Push Caveman back
       this.isRunning = true;
       this.lastTime = performance.now();
+      ads.gameplayStart();
       sound.playRevive();
       const modal = document.getElementById('chase-over-modal');
       if (modal) modal.style.display = 'none';

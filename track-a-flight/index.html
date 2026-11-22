@@ -123,32 +123,6 @@
     </div>
   </div>
 
-  <script type="module">
-    import { FlightEngine } from './src/FlightEngine.js';
-    import { crossPromo } from '../core/crossPromo/CrossPromoModal.js';
-
-    const engine = new FlightEngine('flight-canvas');
-    engine.start();
-
-    // Arena change handler
-    document.getElementById('arena-selector').addEventListener('change', (e) => {
-      engine.switchArena(e.target.value);
-    });
-
-    // Revive & Restart buttons
-    document.getElementById('revive-btn').addEventListener('click', () => {
-      engine.attemptRevive();
-    });
-
-    document.getElementById('restart-btn').addEventListener('click', () => {
-      document.getElementById('game-over-modal').style.display = 'none';
-      engine.switchArena(engine.config.id);
-    });
-
-    // Zero-CAC Cross Promotion Modal
-    document.getElementById('more-games-btn').addEventListener('click', () => {
-      crossPromo.showPortfolioModal('track-a');
-    });
-  </script>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>

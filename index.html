@@ -3,15 +3,15 @@
 <head>
   <meta charset="UTF-8">
   <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no, viewport-fit=cover">
-  <title>Modular Multi-Game Portfolio Studio</title>
+  <title>PlumeWing Games Portfolio Hub</title>
   <style>
     * { box-sizing: border-box; margin: 0; padding: 0; }
     body {
       background: #020617; color: #f8fafc; font-family: system-ui, -apple-system, sans-serif;
       min-height: 100vh; display: flex; flex-direction: column; align-items: center; padding: 24px 16px;
     }
-    .header { text-align: center; margin-bottom: 32px; max-width: 640px; }
-    .header h1 { font-size: 28px; font-weight: 800; background: linear-gradient(135deg, #38bdf8 0%, #a855f7 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
+    .header { text-align: center; margin-bottom: 28px; max-width: 640px; }
+    .header h1 { font-size: 30px; font-weight: 800; background: linear-gradient(135deg, #38bdf8 0%, #06b6d4 50%, #f97316 100%); -webkit-background-clip: text; -webkit-text-fill-color: transparent; }
     .header p { color: #94a3b8; font-size: 14px; margin-top: 8px; line-height: 1.5; }
 
     .stats-card {
@@ -22,24 +22,29 @@
     .stat-val { font-size: 20px; font-weight: 800; }
     .stat-lbl { font-size: 11px; text-transform: uppercase; color: #64748b; letter-spacing: 0.5px; }
 
-    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(300px, 1fr)); gap: 20px; width: 100%; max-width: 800px; }
+    .grid { display: grid; grid-template-columns: repeat(auto-fit, minmax(280px, 1fr)); gap: 20px; width: 100%; max-width: 960px; }
     .game-card {
       background: #0f172a; border: 1px solid #1e293b; border-radius: 16px; padding: 20px;
       display: flex; flex-direction: column; justify-content: space-between; transition: transform 0.2s, border-color 0.2s;
     }
-    .game-card:hover { transform: translateY(-3px); border-color: #38bdf8; }
+    .game-card:hover { transform: translateY(-3px); }
+    .card-featured { border-color: #06b6d4; box-shadow: 0 0 25px rgba(6, 182, 212, 0.15); }
+
     .badge {
       display: inline-block; font-size: 10px; font-weight: 800; text-transform: uppercase;
       padding: 4px 8px; border-radius: 6px; margin-bottom: 12px;
     }
+    .badge-cyan { background: rgba(6, 182, 212, 0.15); color: #06b6d4; border: 1px solid rgba(6, 182, 212, 0.4); }
     .badge-blue { background: rgba(56, 189, 248, 0.15); color: #38bdf8; border: 1px solid rgba(56, 189, 248, 0.3); }
     .badge-orange { background: rgba(249, 115, 22, 0.15); color: #f97316; border: 1px solid rgba(249, 115, 22, 0.3); }
-    .game-title { font-size: 18px; font-weight: 700; margin-bottom: 6px; }
+
+    .game-title { font-size: 18px; font-weight: 800; margin-bottom: 6px; }
     .game-desc { font-size: 13px; color: #94a3b8; line-height: 1.4; margin-bottom: 18px; flex: 1; }
     .play-btn {
       display: block; text-align: center; text-decoration: none; padding: 12px; border-radius: 10px;
       font-weight: 700; font-size: 14px; transition: opacity 0.2s;
     }
+    .play-btn-cyan { background: #06b6d4; color: #020617; }
     .play-btn-blue { background: #38bdf8; color: #020617; }
     .play-btn-orange { background: #f97316; color: #020617; }
     .play-btn:active { opacity: 0.8; }
@@ -49,18 +54,18 @@
 </head>
 <body>
   <div class="header">
-    <h1>Modular Multi-Game Portfolio</h1>
-    <p>$0 Upfront Cost Architecture • Unified Web Engines • Zero-CAC Traffic Cross-Promotion</p>
+    <h1>PlumeWing Games Studio</h1>
+    <p>$0 Upfront Cost Architecture • Instant Mobile Web • Zero-CAC Traffic Cross-Promotion</p>
   </div>
 
   <div class="stats-card">
     <div class="stat-item">
-      <div id="stat-pearls" class="stat-val" style="color: #38bdf8;">0</div>
-      <div class="stat-lbl">Track A Pearls</div>
+      <div id="stat-pearls" class="stat-val" style="color: #06b6d4;">0</div>
+      <div class="stat-lbl">Luminescent Pearls</div>
     </div>
     <div class="stat-item" style="border-left: 1px solid #1e293b; padding-left: 24px;">
       <div id="stat-berries" class="stat-val" style="color: #facc15;">0</div>
-      <div class="stat-lbl">Track B Berries</div>
+      <div class="stat-lbl">Golden Shells / Berries</div>
     </div>
     <div class="stat-item" style="border-left: 1px solid #1e293b; padding-left: 24px;">
       <div class="stat-val" style="color: #22c55e;">$0.00</div>
@@ -69,25 +74,40 @@
   </div>
 
   <div class="grid">
-    <!-- Track A Card -->
+    <!-- Featured: Puff Guard -->
+    <div class="game-card card-featured">
+      <div>
+        <span class="badge badge-cyan">🔥 NEW FEATURED • HTML5 60 FPS</span>
+        <div style="width: 100%; aspect-ratio: 16/9; border-radius: 10px; overflow: hidden; margin-bottom: 12px; border: 1px solid #334155;">
+          <img src="./puff-guard/assets/cover.jpg" alt="Puff Guard" style="width: 100%; height: 100%; object-fit: cover;">
+        </div>
+        <div class="game-title">Puff Guard: Defenders of the Reef</div>
+        <div class="game-desc">
+          Cinematic opening video prologue, dynamic water caustics, god rays, and 3 asymmetric divers (Maya, Jax, Soren) defending 5 progressive coral reefs against pufferfish, barracudas, and tiger sharks.
+        </div>
+      </div>
+      <a href="/puff-guard/index.html" class="play-btn play-btn-cyan">Dive into Puff Guard (5 Reefs)</a>
+    </div>
+
+    <!-- Track A: 3D Flight -->
     <div class="game-card">
       <div>
         <span class="badge badge-blue">Track A • Three.js WebGL</span>
         <div class="game-title">Notebook Arcade: 3D Flight</div>
         <div class="game-desc">
-          Universal forward-flight engine with bloom post-processing, frame-interpolated gate crossing collision, and 10 swappable worlds (Manta Ray Flagship, Nano Drift, Souq Glider, Gorge Rush, Pripyat, Tide Bloom, The Void).
+          Universal forward-flight engine with bloom post-processing, frame-interpolated gate crossing collision, and 10 swappable worlds (Manta Ray Flagship, Nano Drift, Souq Glider, Gorge Rush, Pripyat, The Void).
         </div>
       </div>
       <a href="/track-a-flight/index.html" class="play-btn play-btn-blue">Launch 3D Flight (10 Arenas)</a>
     </div>
 
-    <!-- Track B Card -->
+    <!-- Track B: Caveman Chase -->
     <div class="game-card">
       <div>
         <span class="badge badge-orange">Track B • HTML5 Canvas 60 FPS</span>
         <div class="game-title">Featherweight: Caveman Chase</div>
         <div class="game-desc">
-          2.5D Slapstick action-chase across 3 depth lanes with a 6-layer parallax stack. Relentless Caveman AI continuously slams stone mallet triggering camera trauma shake and expanding shockwaves. 6 playable animals across 12 levels.
+          2.5D Slapstick action-chase across 3 depth lanes with a 6-layer parallax stack. Relentless Caveman AI slams stone mallet triggering camera trauma shake and expanding shockwaves. 6 playable animals across 12 levels.
         </div>
       </div>
       <a href="/track-b-chase/index.html" class="play-btn play-btn-orange">Launch Caveman Chase (6 Animals)</a>
@@ -95,13 +115,9 @@
   </div>
 
   <div class="footer">
-    Antigravity AI Multi-Agent Pipeline: Architect • World-Builder • QA Critic • Monetization Specialist
+    PlumeWing Games Multi-Agent Pipeline • Architect • World-Builder • QA Critic • Monetization Specialist
   </div>
 
-  <script type="module">
-    import { economy } from './core/economy/EconomyManager.js';
-    document.getElementById('stat-pearls').textContent = economy.getPearls();
-    document.getElementById('stat-berries').textContent = economy.getGoldenBerries();
-  </script>
+  <script type="module" src="./main.js"></script>
 </body>
 </html>

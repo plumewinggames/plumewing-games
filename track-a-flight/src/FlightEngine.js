@@ -242,6 +242,7 @@ export class FlightEngine {
 
   start() {
     sound.init();
+    ads.gameplayStart();
     this.isRunning = true;
     this.isPaused = false;
     this.clock.start();
@@ -371,6 +372,7 @@ export class FlightEngine {
 
   triggerGameOver(reason) {
     this.isRunning = false;
+    ads.gameplayStop();
     economy.recordScore('flight', this.config.id, this.score);
 
     const modal = document.getElementById('game-over-modal');
@@ -398,6 +400,7 @@ export class FlightEngine {
       this.resource = 70;
       this.isRunning = true;
       this.clock.start();
+      ads.gameplayStart();
       sound.playRevive();
       const modal = document.getElementById('game-over-modal');
       if (modal) modal.style.display = 'none';
@@ -411,6 +414,7 @@ export class FlightEngine {
   switchArena(newArenaId) {
     if (!ARENA_CONFIGS[newArenaId]) return;
     this.isRunning = false;
+    ads.gameplayStop();
 
     // Complete GPU cleanup
     this.clearWorld();

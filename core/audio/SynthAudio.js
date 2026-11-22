@@ -41,6 +41,20 @@ export class SynthAudio {
     return this.muted;
   }
 
+  mute() {
+    this.muted = true;
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setValueAtTime(0, this.ctx.currentTime);
+    }
+  }
+
+  unmute() {
+    this.muted = false;
+    if (this.masterGain && this.ctx) {
+      this.masterGain.gain.setValueAtTime(0.3, this.ctx.currentTime);
+    }
+  }
+
   // --- Procedural SFX Generators ---
 
   /** Positive chime on passing through gates or rings */
