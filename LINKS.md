@@ -1,10 +1,11 @@
 # 🎮 PlumeWing Games — Master Link Directory & Access Hub
 
-> 🚀 **LIVE PUBLIC MOBILE LINK (ACTIVE NOW - Works on 4G / Wi-Fi anywhere):**
-> * **Hub:** [https://bd9eb3eed495b4.app.lhr.life](https://bd9eb3eed495b4.app.lhr.life)
-> * **Puff Guard:** [https://bd9eb3eed495b4.app.lhr.life/puff-guard/index.html](https://bd9eb3eed495b4.app.lhr.life/puff-guard/index.html)
-> * **Track A (3D Flight):** [https://bd9eb3eed495b4.app.lhr.life/track-a-flight/index.html](https://bd9eb3eed495b4.app.lhr.life/track-a-flight/index.html)
-> * **Track B (Caveman Chase):** [https://bd9eb3eed495b4.app.lhr.life/track-b-chase/index.html](https://bd9eb3eed495b4.app.lhr.life/track-b-chase/index.html)
+> 🚀 **LIVE VERCEL CLOUD DEPLOYMENT (UNBLOCKED IN EGYPT - Open on Any Mobile Phone Now):**
+> * **🎮 Portfolio Hub:** [https://agile-tundra-hcpm2v3.tmp.now/](https://agile-tundra-hcpm2v3.tmp.now/)
+> * **🐡 Puff Guard:** [https://agile-tundra-hcpm2v3.tmp.now/puff-guard/index.html](https://agile-tundra-hcpm2v3.tmp.now/puff-guard/index.html)
+> * **✈️ Track A (3D Flight):** [https://agile-tundra-hcpm2v3.tmp.now/track-a-flight/index.html](https://agile-tundra-hcpm2v3.tmp.now/track-a-flight/index.html)
+> * **🦖 Track B (Caveman Chase):** [https://agile-tundra-hcpm2v3.tmp.now/track-b-chase/index.html](https://agile-tundra-hcpm2v3.tmp.now/track-b-chase/index.html)
+> * **Claim into your Vercel account:** [https://vercel.com/claim-deployment?code=aa6fdf39-e1d3-4bd8-b1e5-8677250cc8ea](https://vercel.com/claim-deployment?code=aa6fdf39-e1d3-4bd8-b1e5-8677250cc8ea)
 
 ---
 
