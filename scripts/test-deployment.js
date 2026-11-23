@@ -24,6 +24,7 @@ async function runHealthCheck() {
     { name: 'Local Dev Track A (3D Flight)', url: 'http://localhost:5173/track-a-flight/index.html' },
     { name: 'Local Dev Track B (Caveman)', url: 'http://localhost:5173/track-b-chase/index.html' },
     { name: 'Local Dev Puff Guard', url: 'http://localhost:5173/puff-guard/index.html' },
+    { name: 'Cloud: Vercel (Unblocked)', url: 'https://agile-tundra-hcpm2v3.tmp.now/' },
     { name: 'Cloud: Netlify Hub', url: 'https://plumewing-games.netlify.app/' },
     { name: 'Cloud: GitHub Pages', url: 'https://plumewinggames.github.io/plumewing-games/' }
   ];

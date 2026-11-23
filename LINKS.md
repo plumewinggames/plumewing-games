@@ -1,11 +1,18 @@
 # 🎮 PlumeWing Games — Master Link Directory & Access Hub
 
-> 🚀 **LIVE VERCEL CLOUD DEPLOYMENT (UNBLOCKED IN EGYPT - Open on Any Mobile Phone Now):**
-> * **🎮 Portfolio Hub:** [https://agile-tundra-hcpm2v3.tmp.now/](https://agile-tundra-hcpm2v3.tmp.now/)
-> * **🐡 Puff Guard:** [https://agile-tundra-hcpm2v3.tmp.now/puff-guard/index.html](https://agile-tundra-hcpm2v3.tmp.now/puff-guard/index.html)
-> * **✈️ Track A (3D Flight):** [https://agile-tundra-hcpm2v3.tmp.now/track-a-flight/index.html](https://agile-tundra-hcpm2v3.tmp.now/track-a-flight/index.html)
-> * **🦖 Track B (Caveman Chase):** [https://agile-tundra-hcpm2v3.tmp.now/track-b-chase/index.html](https://agile-tundra-hcpm2v3.tmp.now/track-b-chase/index.html)
-> * **Claim into your Vercel account:** [https://vercel.com/claim-deployment?code=aa6fdf39-e1d3-4bd8-b1e5-8677250cc8ea](https://vercel.com/claim-deployment?code=aa6fdf39-e1d3-4bd8-b1e5-8677250cc8ea)
+> 🟢 **100% WORKING CLOUD LINKS (UNBLOCKED ON MOBILE IN EGYPT - OPEN RIGHT NOW):**
+>
+> ### 🏆 Primary: GitHub Pages (Permanent & Fast Worldwide)
+> * **🎮 Portfolio Hub:** [https://plumewinggames.github.io/plumewing-games/](https://plumewinggames.github.io/plumewing-games/)
+> * **🐡 Puff Guard (Reef Survival):** [https://plumewinggames.github.io/plumewing-games/puff-guard/index.html](https://plumewinggames.github.io/plumewing-games/puff-guard/index.html)
+> * **✈️ Track A (3D Flight — 10 Worlds):** [https://plumewinggames.github.io/plumewing-games/track-a-flight/index.html](https://plumewinggames.github.io/plumewing-games/track-a-flight/index.html)
+> * **🦖 Track B (2.5D Caveman Chase):** [https://plumewinggames.github.io/plumewing-games/track-b-chase/index.html](https://plumewinggames.github.io/plumewing-games/track-b-chase/index.html)
+>
+> ---
+>
+> ### ▲ Alternative: Vercel Cloud
+> * **Portfolio Hub:** [https://agile-tundra-hcpm2v3.tmp.now/](https://agile-tundra-hcpm2v3.tmp.now/)
+> * **Claim deployment to your Vercel account:** [Claim Deployment Link](https://vercel.com/claim-deployment?code=aa6fdf39-e1d3-4bd8-b1e5-8677250cc8ea)
 
 ---
 
