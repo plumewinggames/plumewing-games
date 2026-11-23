@@ -1,4 +1,4 @@
-import{e as xr}from"./EconomyManager-LkcXh6lF.js";import{s as Pn,a as jt,c as fc}from"./CrossPromoModal-fnLEfTNf.js";/**
+import{e as xr}from"./EconomyManager-LkcXh6lF.js";import{s as Pn,a as jt,c as fc}from"./CrossPromoModal-BGlrdBhT.js";/**
  * @license
  * Copyright 2010-2023 Three.js Authors
  * SPDX-License-Identifier: MIT
