@@ -12,7 +12,8 @@
 
     /* Top HUD */
     #hud {
-      position: absolute; top: env(safe-area-inset-top, 12px); left: 16px; right: 16px;
+      position: absolute; top: env(safe-area-inset-top, 12px); left: 50%; transform: translateX(-50%);
+      width: calc(100% - 32px); max-width: 960px;
       display: flex; justify-content: space-between; align-items: center; pointer-events: none; z-index: 10;
     }
     .hud-chip {

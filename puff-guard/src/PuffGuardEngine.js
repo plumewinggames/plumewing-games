@@ -642,11 +642,20 @@ export class PuffGuardEngine {
     });
   }
 
-  // --- RENDERING PIPELINE (Attractive VFX & Better Fish Visuals) ---
+  // --- RENDERING PIPELINE (Attractive VFX & Clean Border Isolation) ---
   render() {
+    // 0. Clean entire display canvas to eliminate trailing ghosts, shake artifacts & border clutter
+    this.ctx.fillStyle = '#020617';
+    this.ctx.fillRect(0, 0, this.canvas.width, this.canvas.height);
+
     this.ctx.save();
     this.ctx.translate(this.offsetX + this.shakeOffset.x, this.offsetY + this.shakeOffset.y);
     this.ctx.scale(this.scale, this.scale);
+
+    // Strict clipping to base 960x540 viewport: prevents entities/particles bleeding into border areas
+    this.ctx.beginPath();
+    this.ctx.rect(0, 0, this.baseW, this.baseH);
+    this.ctx.clip();
 
     // 1. Water Background Gradient
     const waterGrad = this.ctx.createLinearGradient(0, 0, 0, this.baseH);
@@ -684,7 +693,23 @@ export class PuffGuardEngine {
     // 10. Bubbles & Sparkles
     this.drawBubblesAndSparkles();
 
+    // 11. Subtle inner border vignette to frame gameplay cleanly
+    this.ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+    this.ctx.lineWidth = 2;
+    this.ctx.strokeRect(1, 1, this.baseW - 2, this.baseH - 2);
+
     this.ctx.restore();
+
+    // Clean outer letterbox / pillarbox mask to ensure crisp razor-sharp margins
+    this.ctx.fillStyle = '#020617';
+    if (this.offsetX > 0) {
+      this.ctx.fillRect(0, 0, Math.ceil(this.offsetX), this.canvas.height);
+      this.ctx.fillRect(Math.floor(this.canvas.width - this.offsetX), 0, Math.ceil(this.offsetX), this.canvas.height);
+    }
+    if (this.offsetY > 0) {
+      this.ctx.fillRect(0, 0, this.canvas.width, Math.ceil(this.offsetY));
+      this.ctx.fillRect(0, Math.floor(this.canvas.height - this.offsetY), this.canvas.width, Math.ceil(this.offsetY));
+    }
   }
 
   drawGodRays() {
