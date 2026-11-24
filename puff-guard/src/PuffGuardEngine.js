@@ -18,6 +18,8 @@ export class PuffGuardEngine {
     this.difficulty = DIFFICULTY_CONFIGS.standard;
     this.reefIndex = 0;
     this.reef = REEF_CONFIGS[this.reefIndex];
+    this.reefPearlsCollected = 0;
+    this.isTransitioning = false;
 
     // Engine loop & state
     this.isRunning = false;
@@ -569,8 +571,14 @@ export class PuffGuardEngine {
     const mult = this.diver.prizeMultiplier * this.difficulty.prizeMult;
     if (type === 'pearl') {
       this.pearls += 1;
+      this.reefPearlsCollected = (this.reefPearlsCollected || 0) + 1;
       economy.addPearls(1);
       this.score += Math.floor(points * mult);
+
+      // Instantly advance when all required reef pearls are harvested
+      if (this.reefPearlsCollected >= (this.reef.targetPearls || 5)) {
+        this.advanceReef();
+      }
     } else {
       this.shells += 1;
       economy.addGoldenBerries(1); // Mapped to portfolio currency
@@ -578,7 +586,7 @@ export class PuffGuardEngine {
     }
 
     // Replenish Air on Prize Collect
-    this.player.air = Math.min(this.player.maxAir, this.player.air + 8);
+    this.player.air = Math.min(this.player.maxAir, this.player.air + 14);
   }
 
   createBurstBubbles(x, y, count) {
@@ -617,22 +625,46 @@ export class PuffGuardEngine {
     }
   }
 
+  // --- SMOOTH NON-BLOCKING REEF TRANSITION (Zero Alert Dialogs) ---
   advanceReef() {
-    this.isPaused = true;
+    if (this.isTransitioning) return;
+    this.isTransitioning = true;
     sound.playRevive();
     ads.happyTime();
 
+    const banner = document.getElementById('reef-cleared-banner');
+    const titleEl = document.getElementById('banner-reef-title');
+    const subEl = document.getElementById('banner-reef-sub');
+
     this.reefIndex++;
     if (this.reefIndex >= REEF_CONFIGS.length) {
-      alert('🏆 CONGRATULATIONS! You cleared all 5 reefs and conquered the Abyssal Mariana Trench!');
-      location.reload();
+      if (banner && titleEl && subEl) {
+        titleEl.textContent = '🏆 MARIANA TRENCH CONQUERED!';
+        subEl.textContent = 'You have mastered all five reefs!';
+        banner.style.display = 'block';
+      }
+      setTimeout(() => {
+        this.triggerGameOver('Victory: Master of the Five Reefs');
+      }, 3500);
       return;
     }
 
-    this.reef = REEF_CONFIGS[this.reefIndex];
-    alert(`🎉 REEF CLEARED! Diving deeper into Reef ${this.reef.reefNumber}: ${this.reef.name} (${this.reef.depth})!`);
-    this.initReefEntities();
-    this.isPaused = false;
+    const nextReef = REEF_CONFIGS[this.reefIndex];
+    if (banner && titleEl && subEl) {
+      titleEl.textContent = `Reef ${this.reef.reefNumber} Harvested!`;
+      subEl.textContent = `Diving into Reef ${nextReef.reefNumber}: ${nextReef.name} (${nextReef.depth})...`;
+      banner.style.display = 'block';
+    }
+
+    // Smooth cinematic descent transition
+    setTimeout(() => {
+      if (banner) banner.style.display = 'none';
+      this.reef = nextReef;
+      this.reefPearlsCollected = 0;
+      this.initReefEntities();
+      this.isTransitioning = false;
+      this.updateHUD();
+    }, 2400);
   }
 
   updateHUD() {
@@ -642,6 +674,7 @@ export class PuffGuardEngine {
     const elShells = document.getElementById('hud-shells');
     const elHearts = document.getElementById('hud-hearts');
     const elReef = document.getElementById('hud-reef-name');
+    const elGoalPearls = document.getElementById('hud-goal-pearls');
 
     if (elAir) elAir.style.width = `${Math.max(0, (this.player.air / this.player.maxAir) * 100)}%`;
     if (elScore) elScore.textContent = this.score;
@@ -649,6 +682,7 @@ export class PuffGuardEngine {
     if (elShells) elShells.textContent = this.shells;
     if (elHearts) elHearts.textContent = '❤️'.repeat(Math.max(0, this.player.hearts));
     if (elReef) elReef.textContent = `Reef ${this.reef.reefNumber}: ${this.reef.name} (${this.reef.depth})`;
+    if (elGoalPearls) elGoalPearls.textContent = `${this.reefPearlsCollected || 0}/${this.reef.targetPearls || 5}`;
   }
 
   triggerGameOver(reason) {
@@ -1210,7 +1244,7 @@ export class PuffGuardEngine {
     }
   }
 
-  // --- DETAILED PREDATORS WITH TRACKING EYES & ANATOMY ---
+  // --- DESIGN B: DETAILED ATMOSPHERIC ILLUSTRATIVE PREDATORS ---
   drawPredators() {
     for (const p of this.predators) {
       this.ctx.save();
@@ -1219,244 +1253,341 @@ export class PuffGuardEngine {
       this.ctx.scale(p.scale, p.scale);
 
       if (p.type === 'puffer') {
-        // --- 1. DETAILED PORCUPINE PUFFERFISH ---
+        // --- 1. DETAILED PORCUPINE PUFFERFISH (DIODON HYSTRIX) ---
         const isInflated = p.scale > 1.15;
-        const radius = 19;
+        const radius = 20;
 
-        // Dynamic player-tracking pupil angle
+        // Dynamic pupil tracking diver
         const targetAngle = Math.atan2(this.player.y - p.y, this.player.x - p.x) - p.angle;
-        const pupilX = Math.cos(targetAngle) * 3;
-        const pupilY = Math.sin(targetAngle) * 3;
+        const pupilX = Math.cos(targetAngle) * 3.5;
+        const pupilY = Math.sin(targetAngle) * 3.5;
 
-        // Sharp Venom Spines (Radiating outward with glowing warning tips)
+        // Breathing mouth gulp animation
+        const mouthGulp = Math.sin(Date.now() * 0.006 + p.x) * 2;
+
+        // 3D-Shaded Venomous Spines (Conical shafts with glowing toxic crimson tips)
         if (isInflated) {
-          const spineCount = 14;
+          const spineCount = 16;
           for (let a = 0; a < Math.PI * 2; a += (Math.PI * 2) / spineCount) {
             const bx = Math.cos(a) * (radius - 2);
             const by = Math.sin(a) * (radius - 2);
-            const tx = Math.cos(a) * (radius + 9);
-            const ty = Math.sin(a) * (radius + 9);
+            const tx = Math.cos(a) * (radius + 11);
+            const ty = Math.sin(a) * (radius + 11);
 
             const spineGrad = this.ctx.createLinearGradient(bx, by, tx, ty);
-            spineGrad.addColorStop(0, '#f59e0b');
-            spineGrad.addColorStop(0.7, '#ef4444');
+            spineGrad.addColorStop(0, '#78350f');
+            spineGrad.addColorStop(0.4, '#f59e0b');
+            spineGrad.addColorStop(0.85, '#ef4444');
             spineGrad.addColorStop(1, '#ffffff');
             this.ctx.fillStyle = spineGrad;
 
             this.ctx.beginPath();
-            this.ctx.moveTo(bx + Math.cos(a + 1.57) * 2.5, by + Math.sin(a + 1.57) * 2.5);
+            this.ctx.moveTo(bx + Math.cos(a + 1.57) * 2.8, by + Math.sin(a + 1.57) * 2.8);
             this.ctx.lineTo(tx, ty);
-            this.ctx.lineTo(bx - Math.cos(a + 1.57) * 2.5, by - Math.sin(a + 1.57) * 2.5);
+            this.ctx.lineTo(bx - Math.cos(a + 1.57) * 2.8, by - Math.sin(a + 1.57) * 2.8);
             this.ctx.closePath();
+            this.ctx.fill();
+
+            // Toxic venom droplet glow at tip
+            this.ctx.fillStyle = '#fca5a5';
+            this.ctx.beginPath();
+            this.ctx.arc(tx, ty, 1.2, 0, Math.PI * 2);
             this.ctx.fill();
           }
         }
 
-        // Spherical Radial Gradient Body (Organic Ivory-to-Amber)
-        const pufferGrad = this.ctx.createRadialGradient(-4, -4, 2, 0, 0, radius);
-        pufferGrad.addColorStop(0, '#fef08a');
-        pufferGrad.addColorStop(0.65, '#f59e0b');
-        pufferGrad.addColorStop(1, isInflated ? '#dc2626' : '#d97706');
+        // Spherical Radial Gradient Body (Ivory belly countershaded against golden-olive dorsal)
+        const pufferGrad = this.ctx.createRadialGradient(-5, -5, 2, 0, 0, radius);
+        pufferGrad.addColorStop(0, '#fef9c3');
+        pufferGrad.addColorStop(0.45, '#fde047');
+        pufferGrad.addColorStop(0.8, isInflated ? '#ea580c' : '#d97706');
+        pufferGrad.addColorStop(1, isInflated ? '#b91c1c' : '#92400e');
         this.ctx.fillStyle = pufferGrad;
 
         this.ctx.beginPath();
         this.ctx.arc(0, 0, radius, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // Mottled Leopard Freckles on Dorsal
-        this.ctx.fillStyle = 'rgba(120, 53, 15, 0.45)';
-        for (let i = 0; i < 6; i++) {
-          const fx = -10 + (i % 3) * 8;
-          const fy = -10 + Math.floor(i / 3) * 6;
+        // Textured Pebbled Dermal Stippling on Dorsal
+        this.ctx.fillStyle = 'rgba(69, 26, 3, 0.55)';
+        const stipples = [
+          [-12, -8], [-6, -11], [0, -12], [6, -10],
+          [-10, -3], [-3, -6], [3, -5], [9, -4],
+          [-8, 3], [-2, 0], [4, 2]
+        ];
+        for (const [sx, sy] of stipples) {
           this.ctx.beginPath();
-          this.ctx.arc(fx, fy, 1.8, 0, Math.PI * 2);
+          this.ctx.arc(sx, sy, 1.6, 0, Math.PI * 2);
           this.ctx.fill();
         }
 
-        // Large Glossy Tracking Eye
+        // Beak / Fleshy Mouth (breathing gulp)
+        this.ctx.fillStyle = '#fde68a';
+        this.ctx.strokeStyle = '#b45309';
+        this.ctx.lineWidth = 1.2;
+        this.ctx.beginPath();
+        this.ctx.ellipse(radius - 2, 2, 4 + mouthGulp * 0.5, 3 + mouthGulp * 0.8, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.stroke();
+
+        // Eye: Golden-amber iris with tracking pupil & double specular glint
+        this.ctx.fillStyle = '#fef08a';
+        this.ctx.beginPath();
+        this.ctx.arc(9, -6, 6.5, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        this.ctx.fillStyle = '#b45309';
+        this.ctx.beginPath();
+        this.ctx.arc(9, -6, 5.2, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        this.ctx.fillStyle = '#1c1917';
+        this.ctx.beginPath();
+        this.ctx.arc(9 + pupilX * 0.6, -6 + pupilY * 0.6, 3.5, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Primary specular glint & secondary rim reflection
         this.ctx.fillStyle = '#ffffff';
         this.ctx.beginPath();
-        this.ctx.arc(8, -5, 6, 0, Math.PI * 2);
+        this.ctx.arc(7.5, -8, 1.6, 0, Math.PI * 2);
+        this.ctx.arc(11, -4.5, 0.8, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // Dark Iris & Pupil tracking diver
-        this.ctx.fillStyle = '#451a03';
+        // Translucent Ribbed Pectoral Fin with individual fin rays
+        const finWave = Math.sin(Date.now() * 0.012 + p.x) * 5;
+        this.ctx.fillStyle = 'rgba(254, 240, 138, 0.65)';
         this.ctx.beginPath();
-        this.ctx.arc(8 + pupilX * 0.7, -5 + pupilY * 0.7, 3.2, 0, Math.PI * 2);
+        this.ctx.ellipse(-7, 9, 9, 5, 0.4 + finWave * 0.08, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // White Specular Eye Glint
-        this.ctx.fillStyle = '#ffffff';
+        this.ctx.strokeStyle = '#d97706';
+        this.ctx.lineWidth = 1;
         this.ctx.beginPath();
-        this.ctx.arc(7, -7, 1.4, 0, Math.PI * 2);
-        this.ctx.fill();
-
-        // Translucent Pectoral Fins with fluttering wave
-        const finWave = Math.sin(Date.now() * 0.012 + p.x) * 4;
-        this.ctx.fillStyle = 'rgba(254, 240, 138, 0.75)';
-        this.ctx.beginPath();
-        this.ctx.ellipse(-6, 8, 8, 4, 0.4 + finWave * 0.1, 0, Math.PI * 2);
-        this.ctx.fill();
+        this.ctx.moveTo(-11, 7);
+        this.ctx.lineTo(-4, 11);
+        this.ctx.moveTo(-9, 6);
+        this.ctx.lineTo(-2, 10);
+        this.ctx.stroke();
 
       } else if (p.type === 'shark') {
-        // --- 2. APEX TIGER SHARK (Countershaded + Sinuous Wave) ---
-        const tailOsc = Math.sin(p.wiggle) * 11;
+        // --- 2. APEX TIGER SHARK (CARCHARHINUS) ---
+        const tailOsc = Math.sin(p.wiggle) * 12;
 
-        // Countershaded Body Gradient (Slate dorsal, ivory ventral)
-        const sharkGrad = this.ctx.createLinearGradient(0, -18, 0, 18);
-        sharkGrad.addColorStop(0, '#1e293b');
-        sharkGrad.addColorStop(0.65, '#475569');
-        sharkGrad.addColorStop(1, '#f1f5f9');
+        // Countershaded Muscular Shark Body
+        const sharkGrad = this.ctx.createLinearGradient(0, -19, 0, 19);
+        sharkGrad.addColorStop(0, '#0f172a');
+        sharkGrad.addColorStop(0.3, '#334155');
+        sharkGrad.addColorStop(0.68, '#64748b');
+        sharkGrad.addColorStop(1, '#f8fafc');
         this.ctx.fillStyle = sharkGrad;
 
         this.ctx.beginPath();
-        this.ctx.ellipse(0, 0, 52, 17, 0, 0, Math.PI * 2);
+        this.ctx.ellipse(0, 0, 54, 18, 0, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // Vertical Tiger Camouflage Stripes
-        this.ctx.strokeStyle = 'rgba(15, 23, 42, 0.4)';
-        this.ctx.lineWidth = 2.5;
-        for (let s = -18; s <= 18; s += 9) {
+        // Soft-feathered dark vertical tiger stripes
+        this.ctx.strokeStyle = 'rgba(15, 23, 42, 0.45)';
+        this.ctx.lineWidth = 3;
+        this.ctx.lineCap = 'round';
+        for (let s = -22; s <= 18; s += 8) {
           this.ctx.beginPath();
-          this.ctx.moveTo(s, -15);
-          this.ctx.lineTo(s - 4, -2);
+          this.ctx.moveTo(s, -16);
+          this.ctx.quadraticCurveTo(s - 2, -7, s - 5, -1);
           this.ctx.stroke();
         }
 
-        // Tall Triangular Dorsal Fin
-        this.ctx.fillStyle = '#1e293b';
-        this.ctx.beginPath();
-        this.ctx.moveTo(2, -16);
-        this.ctx.lineTo(-14, -36);
-        this.ctx.lineTo(16, -16);
-        this.ctx.closePath();
-        this.ctx.fill();
-
-        // Sweeping Sinuous Caudal Tail Fin
-        this.ctx.beginPath();
-        this.ctx.moveTo(-45, 0);
-        this.ctx.lineTo(-68, -26 + tailOsc);
-        this.ctx.lineTo(-58, 0);
-        this.ctx.lineTo(-70, 22 + tailOsc);
-        this.ctx.closePath();
-        this.ctx.fill();
-
-        // 5 Gill Slits
-        this.ctx.strokeStyle = '#0f172a';
-        this.ctx.lineWidth = 1.2;
-        for (let g = 0; g < 4; g++) {
-          this.ctx.beginPath();
-          this.ctx.moveTo(12 + g * 3.5, -4);
-          this.ctx.lineTo(11 + g * 3.5, 6);
-          this.ctx.stroke();
-        }
-
-        // Predatory Dark Eye
+        // Tall Serrated Dorsal Fin with battle notches
         this.ctx.fillStyle = '#0f172a';
         this.ctx.beginPath();
-        this.ctx.arc(38, -4, 3, 0, Math.PI * 2);
+        this.ctx.moveTo(2, -17);
+        this.ctx.lineTo(-15, -38);
+        this.ctx.lineTo(-12, -34);
+        this.ctx.lineTo(-9, -32);
+        this.ctx.lineTo(16, -17);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        // Pectoral Stabilizer Fin
+        this.ctx.beginPath();
+        this.ctx.moveTo(10, 12);
+        this.ctx.lineTo(-4, 28);
+        this.ctx.lineTo(-12, 22);
+        this.ctx.lineTo(2, 12);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        // Sweeping Heterocercal Caudal Tail Fin
+        this.ctx.beginPath();
+        this.ctx.moveTo(-46, 0);
+        this.ctx.lineTo(-72, -28 + tailOsc);
+        this.ctx.lineTo(-60, 0);
+        this.ctx.lineTo(-74, 24 + tailOsc);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        // 5 Curved Gill Slits
+        this.ctx.strokeStyle = '#020617';
+        this.ctx.lineWidth = 1.3;
+        for (let g = 0; g < 5; g++) {
+          this.ctx.beginPath();
+          this.ctx.moveTo(12 + g * 3.2, -5);
+          this.ctx.quadraticCurveTo(10 + g * 3.2, 0, 11 + g * 3.2, 7);
+          this.ctx.stroke();
+        }
+
+        // Ampullae of Lorenzini (Electro-receptor dots on snout)
+        this.ctx.fillStyle = 'rgba(15, 23, 42, 0.7)';
+        this.ctx.beginPath();
+        this.ctx.arc(46, -3, 1, 0, Math.PI * 2);
+        this.ctx.arc(49, 1, 1, 0, Math.PI * 2);
+        this.ctx.arc(44, 4, 1, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Cold Predatory Eye with Reflective Glint
+        this.ctx.fillStyle = '#fde047';
+        this.ctx.beginPath();
+        this.ctx.arc(40, -4, 3.2, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = '#000000';
+        this.ctx.beginPath();
+        this.ctx.arc(40, -4, 2.2, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.fillStyle = '#ffffff';
         this.ctx.beginPath();
-        this.ctx.arc(37.5, -4.5, 1, 0, Math.PI * 2);
+        this.ctx.arc(39.5, -5, 1, 0, Math.PI * 2);
         this.ctx.fill();
 
       } else if (p.type === 'eel') {
-        // --- 3. ELECTRIC MORAY EEL (Sinuous Spline & Electric Arcs) ---
-        this.ctx.strokeStyle = '#047857';
-        this.ctx.lineWidth = 14;
+        // --- 3. ELECTRIC MORAY EEL (GYMNOTHORAX) ---
+        this.ctx.strokeStyle = '#064e3b';
+        this.ctx.lineWidth = 15;
         this.ctx.lineCap = 'round';
         this.ctx.lineJoin = 'round';
 
-        // Serpentine Traveling Wave
+        // Sinuous Serpentine Body Curve
         this.ctx.beginPath();
-        this.ctx.moveTo(34, 0);
+        this.ctx.moveTo(36, 0);
         for (let seg = 1; seg <= 6; seg++) {
-          const sx = 34 - seg * 12;
-          const sy = Math.sin(p.wiggle + seg * 0.6) * 9;
+          const sx = 36 - seg * 12.5;
+          const sy = Math.sin(p.wiggle + seg * 0.62) * 9.5;
           this.ctx.lineTo(sx, sy);
         }
         this.ctx.stroke();
 
-        // Leopard Spotting
-        this.ctx.fillStyle = '#064e3b';
+        // Mottled Leopard Rosette Clusters
+        this.ctx.fillStyle = '#022c22';
         for (let seg = 1; seg <= 5; seg++) {
-          const sx = 34 - seg * 12;
-          const sy = Math.sin(p.wiggle + seg * 0.6) * 9;
+          const sx = 36 - seg * 12.5;
+          const sy = Math.sin(p.wiggle + seg * 0.62) * 9.5;
           this.ctx.beginPath();
-          this.ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+          this.ctx.arc(sx, sy - 2, 3, 0, Math.PI * 2);
+          this.ctx.arc(sx + 2, sy + 3, 2.2, 0, Math.PI * 2);
           this.ctx.fill();
         }
 
-        // Crackling Neon Electrical Arcs
-        this.ctx.strokeStyle = '#38bdf8';
-        this.ctx.lineWidth = 2.2;
+        // Multi-Branching Crackling Cyan Lightning Arcs
+        this.ctx.strokeStyle = '#67e8f9';
+        this.ctx.lineWidth = 2.4;
         this.ctx.shadowColor = '#06b6d4';
-        this.ctx.shadowBlur = 8;
+        this.ctx.shadowBlur = 10;
         this.ctx.beginPath();
-        this.ctx.moveTo(25, -6);
-        this.ctx.lineTo(10, -14);
-        this.ctx.lineTo(-5, -6);
-        this.ctx.lineTo(-20, -12);
+        this.ctx.moveTo(28, -6);
+        this.ctx.lineTo(15, -15);
+        this.ctx.lineTo(2, -7);
+        this.ctx.lineTo(-12, -16);
+        this.ctx.lineTo(-24, -8);
         this.ctx.stroke();
         this.ctx.shadowBlur = 0;
 
-        // Fierce Yellow Eye
-        this.ctx.fillStyle = '#fde047';
+        // Open Gaping Jaw with Needle Teeth
+        this.ctx.fillStyle = '#064e3b';
         this.ctx.beginPath();
-        this.ctx.arc(30, -3, 3, 0, Math.PI * 2);
+        this.ctx.moveTo(34, -4);
+        this.ctx.lineTo(44, -1);
+        this.ctx.lineTo(34, 4);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.lineWidth = 1.2;
+        this.ctx.beginPath();
+        this.ctx.moveTo(38, -2);
+        this.ctx.lineTo(40, 1);
+        this.ctx.stroke();
+
+        // Fierce Yellow Eye
+        this.ctx.fillStyle = '#facc15';
+        this.ctx.beginPath();
+        this.ctx.arc(32, -3.5, 3.2, 0, Math.PI * 2);
         this.ctx.fill();
         this.ctx.fillStyle = '#000000';
         this.ctx.beginPath();
-        this.ctx.arc(31, -3, 1.5, 0, Math.PI * 2);
+        this.ctx.arc(32.5, -3.5, 1.6, 0, Math.PI * 2);
         this.ctx.fill();
 
       } else if (p.type === 'barracuda') {
-        // --- 4. SWIFT METALLIC BARRACUDA ---
-        const tailOsc = Math.sin(p.wiggle * 1.5) * 5;
+        // --- 4. SWIFT METALLIC BARRACUDA (SPHYRAENA) ---
+        const tailOsc = Math.sin(p.wiggle * 1.5) * 6;
 
-        // Metallic Silver Torpedo Body
-        const terraGrad = this.ctx.createLinearGradient(0, -9, 0, 9);
-        terraGrad.addColorStop(0, '#94a3b8');
+        // Brushed Metallic Torpedo Body
+        const terraGrad = this.ctx.createLinearGradient(0, -10, 0, 10);
+        terraGrad.addColorStop(0, '#64748b');
+        terraGrad.addColorStop(0.35, '#cbd5e1');
         terraGrad.addColorStop(0.5, '#f8fafc');
-        terraGrad.addColorStop(1, '#475569');
+        terraGrad.addColorStop(0.75, '#94a3b8');
+        terraGrad.addColorStop(1, '#334155');
         this.ctx.fillStyle = terraGrad;
 
         this.ctx.beginPath();
-        this.ctx.ellipse(0, 0, 42, 9, 0, 0, Math.PI * 2);
+        this.ctx.ellipse(0, 0, 44, 9.5, 0, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // Sharp Underslung Predatory Jaw
+        // Dark Flank Vertical Bars
+        this.ctx.strokeStyle = 'rgba(30, 41, 59, 0.4)';
+        this.ctx.lineWidth = 1.6;
+        for (let b = -18; b <= 18; b += 6) {
+          this.ctx.beginPath();
+          this.ctx.moveTo(b, -7);
+          this.ctx.lineTo(b - 2, 4);
+          this.ctx.stroke();
+        }
+
+        // Heavy Underslung Jaw with Razor Dagger Teeth
         this.ctx.fillStyle = '#ffffff';
         this.ctx.beginPath();
-        this.ctx.moveTo(38, -4);
-        this.ctx.lineTo(44, 2);
-        this.ctx.lineTo(36, 4);
+        this.ctx.moveTo(40, -4);
+        this.ctx.lineTo(47, 2);
+        this.ctx.lineTo(38, 5);
         this.ctx.closePath();
         this.ctx.fill();
 
-        // Razor Teeth Glints
-        this.ctx.strokeStyle = '#ffffff';
-        this.ctx.lineWidth = 1;
+        this.ctx.strokeStyle = '#e2e8f0';
+        this.ctx.lineWidth = 1.2;
         this.ctx.beginPath();
-        this.ctx.moveTo(40, -1);
-        this.ctx.lineTo(40, 2);
+        this.ctx.moveTo(42, -2);
+        this.ctx.lineTo(43, 2);
+        this.ctx.moveTo(44, -1);
+        this.ctx.lineTo(45, 1);
         this.ctx.stroke();
 
-        // Forked Caudal Fin
-        this.ctx.fillStyle = '#475569';
+        // Forked Caudal Fin with Black Margins
+        this.ctx.fillStyle = '#334155';
         this.ctx.beginPath();
-        this.ctx.moveTo(-40, 0);
-        this.ctx.lineTo(-54, -14 + tailOsc);
-        this.ctx.lineTo(-46, 0);
-        this.ctx.lineTo(-54, 14 + tailOsc);
+        this.ctx.moveTo(-42, 0);
+        this.ctx.lineTo(-58, -16 + tailOsc);
+        this.ctx.lineTo(-49, 0);
+        this.ctx.lineTo(-58, 16 + tailOsc);
         this.ctx.closePath();
         this.ctx.fill();
 
-        // Cold Black Eye
-        this.ctx.fillStyle = '#000000';
+        // Piercing Black Eye
+        this.ctx.fillStyle = '#0f172a';
         this.ctx.beginPath();
-        this.ctx.arc(30, -2, 2.5, 0, Math.PI * 2);
+        this.ctx.arc(33, -2, 2.8, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.beginPath();
+        this.ctx.arc(32.5, -2.5, 0.9, 0, Math.PI * 2);
         this.ctx.fill();
       }
 
@@ -1464,13 +1595,13 @@ export class PuffGuardEngine {
     }
   }
 
-  // --- ARTICULATED PLAYER DIVER MODEL ---
+  // --- DESIGN B: ARTICULATED ATMOSPHERIC DIVING SUIT (ADS) ---
   drawPlayer() {
     this.ctx.save();
     this.ctx.translate(this.player.x, this.player.y);
     this.ctx.rotate(this.player.angle);
 
-    // Invulnerability Blinking
+    // Blinking during invulnerability
     if (this.player.invulnerableTimer > 0 && Math.floor(Date.now() / 80) % 2 === 0) {
       this.ctx.restore();
       return;
@@ -1519,56 +1650,82 @@ export class PuffGuardEngine {
     this.ctx.closePath();
     this.ctx.fill();
 
-    // 2. Streamlined Hydrodynamic Wetsuit Torso
-    const suitGrad = this.ctx.createLinearGradient(0, -11, 0, 11);
+    // 2. Reinforced Atmospheric Diving Suit (ADS) Torso
+    const suitGrad = this.ctx.createLinearGradient(0, -12, 0, 12);
     suitGrad.addColorStop(0, this.diver.suitAccent);
-    suitGrad.addColorStop(0.5, this.diver.color);
+    suitGrad.addColorStop(0.4, this.diver.color);
+    suitGrad.addColorStop(0.8, '#1e293b');
     suitGrad.addColorStop(1, '#0f172a');
     this.ctx.fillStyle = suitGrad;
 
     this.ctx.beginPath();
-    this.ctx.roundRect(-22, -10, 44, 20, 9);
+    this.ctx.roundRect(-23, -11, 46, 22, 9);
     this.ctx.fill();
 
-    // Contrast Seam Piping
-    this.ctx.strokeStyle = this.diver.suitAccent;
-    this.ctx.lineWidth = 1.6;
+    // Titanium Joint Armor Rings & Seam Piping
+    this.ctx.strokeStyle = '#94a3b8';
+    this.ctx.lineWidth = 1.8;
+    this.ctx.beginPath();
+    this.ctx.arc(-8, 0, 7, 0, Math.PI * 2);
     this.ctx.stroke();
 
-    // 3. Metallic Scuba Tank on Back
-    const tankGrad = this.ctx.createLinearGradient(-15, -17, 15, -17);
-    tankGrad.addColorStop(0, '#94a3b8');
+    // Wrist-Mounted Depth Computer with Glowing LED
+    this.ctx.fillStyle = '#22c55e';
+    this.ctx.shadowColor = '#4ade80';
+    this.ctx.shadowBlur = 6;
+    this.ctx.beginPath();
+    this.ctx.arc(4, 8, 1.8, 0, Math.PI * 2);
+    this.ctx.fill();
+    this.ctx.shadowBlur = 0;
+
+    // 3. Metallic Dual Scuba Tank with High-Pressure Hoses
+    const tankGrad = this.ctx.createLinearGradient(-16, -18, 16, -18);
+    tankGrad.addColorStop(0, '#64748b');
     tankGrad.addColorStop(0.5, '#f8fafc');
-    tankGrad.addColorStop(1, '#475569');
+    tankGrad.addColorStop(1, '#334155');
     this.ctx.fillStyle = tankGrad;
     this.ctx.beginPath();
-    this.ctx.roundRect(-15, -17, 30, 6.5, 3);
+    this.ctx.roundRect(-16, -18, 32, 7, 3.5);
     this.ctx.fill();
 
     // Brass regulator valve cap
     this.ctx.fillStyle = '#facc15';
-    this.ctx.fillRect(14, -16.5, 4, 5);
+    this.ctx.fillRect(15, -17.5, 4.5, 5.5);
 
-    // 4. Chrome-Rimmed Diving Mask & Glass Visor
+    // High-pressure braided hose loop
+    this.ctx.strokeStyle = '#020617';
+    this.ctx.lineWidth = 2;
+    this.ctx.beginPath();
+    this.ctx.moveTo(15, -14);
+    this.ctx.quadraticCurveTo(22, -10, 16, -2);
+    this.ctx.stroke();
+
+    // 4. Chrome-Rimmed Diving Mask & Glass Visor with Face Silhouette
     this.ctx.fillStyle = '#0f172a';
     this.ctx.beginPath();
-    this.ctx.ellipse(14, -1, 9, 8, 0, 0, Math.PI * 2);
+    this.ctx.ellipse(15, -1, 9.5, 8.5, 0, 0, Math.PI * 2);
     this.ctx.fill();
 
-    const visorGrad = this.ctx.createRadialGradient(13, -2, 1, 14, -1, 8);
+    const visorGrad = this.ctx.createRadialGradient(14, -2, 1, 15, -1, 8.5);
     visorGrad.addColorStop(0, '#e0f2fe');
-    visorGrad.addColorStop(0.6, this.diver.visorColor);
-    visorGrad.addColorStop(1, '#0284c7');
+    visorGrad.addColorStop(0.65, this.diver.visorColor);
+    visorGrad.addColorStop(1, '#0369a1');
     this.ctx.fillStyle = visorGrad;
     this.ctx.beginPath();
-    this.ctx.arc(14, -1, 7.2, 0, Math.PI * 2);
+    this.ctx.arc(15, -1, 7.6, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    // Internal diver eyes silhouette
+    this.ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
+    this.ctx.beginPath();
+    this.ctx.arc(15.5, -2, 2, 0, Math.PI * 2);
     this.ctx.fill();
 
     // Visor surface reflection arc
     this.ctx.strokeStyle = '#ffffff';
-    this.ctx.lineWidth = 1.4;
+    this.ctx.lineWidth = 1.5;
     this.ctx.beginPath();
-    this.ctx.arc(14, -1, 5.5, -1.8, -0.6);
+    this.ctx.arc(15, -1, 5.8, -1.8, -0.6);
     this.ctx.stroke();
 
     this.ctx.restore();
