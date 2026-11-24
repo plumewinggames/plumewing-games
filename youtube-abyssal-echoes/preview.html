@@ -1,0 +1,456 @@
+<!DOCTYPE html>
+<html lang="en">
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0, maximum-scale=1.0, user-scalable=no">
+  <title>Abyssal Echoes - Video #1 Generator & Preview</title>
+  <style>
+    * { box-sizing: border-box; margin: 0; padding: 0; user-select: none; }
+    body {
+      background: #030712; color: #f9fafb; font-family: system-ui, -apple-system, sans-serif;
+      display: flex; flex-direction: column; align-items: center; justify-content: center;
+      min-height: 100vh; padding: 12px;
+    }
+    #viewport {
+      position: relative; width: 360px; height: 640px; background: #000;
+      border-radius: 16px; overflow: hidden; box-shadow: 0 10px 40px rgba(0,0,0,0.8), 0 0 20px rgba(6, 182, 212, 0.2);
+    }
+    canvas { width: 100%; height: 100%; display: block; }
+    
+    /* Overlay Captions */
+    #caption-box {
+      position: absolute; bottom: 120px; left: 16px; right: 16px;
+      text-align: center; pointer-events: none; z-index: 10;
+    }
+    .badge {
+      display: inline-block; background: rgba(239, 68, 68, 0.85); color: #fff;
+      font-weight: 900; font-size: 11px; text-transform: uppercase; letter-spacing: 1.5px;
+      padding: 4px 10px; border-radius: 6px; margin-bottom: 8px; backdrop-filter: blur(4px);
+    }
+    .caption-text {
+      font-size: 19px; font-weight: 800; color: #fff; text-shadow: 0 2px 10px rgba(0,0,0,0.9), 0 0 15px rgba(6, 182, 212, 0.6);
+      line-height: 1.35; transition: opacity 0.2s ease;
+    }
+    .caption-highlight { color: #facc15; }
+
+    /* Control Panel */
+    #controls {
+      margin-top: 14px; display: flex; gap: 10px; align-items: center; justify-content: center; width: 100%; max-width: 360px;
+    }
+    button {
+      flex: 1; padding: 12px 14px; border-radius: 10px; border: none; font-weight: 700;
+      font-size: 13px; cursor: pointer; transition: all 0.2s ease; display: flex; align-items: center; justify-content: center; gap: 6px;
+    }
+    .btn-play { background: #06b6d4; color: #000; }
+    .btn-play:hover { background: #22d3ee; }
+    .btn-rec { background: #ef4444; color: #fff; }
+    .btn-rec:hover { background: #dc2626; }
+    .btn-rec.recording { animation: pulse 1s infinite alternate; }
+    @keyframes pulse { from { opacity: 0.8; } to { opacity: 1; transform: scale(1.02); } }
+    
+    #timer { font-size: 12px; color: #94a3b8; font-variant-numeric: tabular-nums; margin-top: 6px; text-align: center; }
+  </style>
+</head>
+<body>
+
+  <div id="viewport">
+    <canvas id="video-canvas" width="720" height="1280"></canvas>
+    
+    <div id="caption-box">
+      <div id="badge-el" class="badge">11,000 METERS UNDERWATER ⚠️</div>
+      <div id="caption-el" class="caption-text">At 11,000 meters beneath the Pacific, water pressure can flatten a titanium submarine in seconds...</div>
+    </div>
+  </div>
+
+  <div id="controls">
+    <button id="btn-play" class="btn-play">▶ Play Preview</button>
+    <button id="btn-record" class="btn-rec">⏺ Export Video</button>
+  </div>
+  <div id="timer">Time: 00:00 / 01:00</div>
+
+  <script>
+    const canvas = document.getElementById('video-canvas');
+    const ctx = canvas.getContext('2d');
+    const badgeEl = document.getElementById('badge-el');
+    const captionEl = document.getElementById('caption-el');
+    const timerEl = document.getElementById('timer');
+    const btnPlay = document.getElementById('btn-play');
+    const btnRecord = document.getElementById('btn-record');
+
+    const TOTAL_DURATION = 60.0;
+    let currentTime = 0;
+    let isPlaying = false;
+    let mediaRecorder = null;
+    let recordedChunks = [];
+    let audioCtx = null;
+
+    // Timeline Events
+    const SCRIPT_TIMELINE = [
+      { start: 0, end: 4, badge: "11,000 METERS UNDERWATER ⚠️", text: "At 11,000 meters beneath the Pacific, water pressure can flatten a titanium submarine in seconds..." },
+      { start: 4, end: 15, badge: "MARIANA TRENCH • 36,000 FT", text: "In 2021, an unmanned deep-sea probe reached the Hadal zone. Its sonar sensors picked up rhythmic echoes..." },
+      { start: 15, end: 30, badge: "LENGTH: ~15 METERS • UNCLASSIFIED", text: "No known vertebrate should survive this pressure. Yet cameras captured a serpentine silhouette with glowing blue light clusters..." },
+      { start: 30, end: 45, badge: "NOAA FREQUENCY: 'UPSWEEP'", text: "Scientists compared the movement to the legendary 'Upsweep' sound recorded thousands of miles across the ocean..." },
+      { start: 45, end: 54, badge: "WHAT'S HIDING DOWN THERE?", text: "Over 95% of our ocean remains unmapped. Are we discovering new species... or waking something up?" },
+      { start: 54, end: 60, badge: "ABYSSAL ECHOES", text: "Subscribe to Abyssal Echoes for Part 2... and dive into the deep abyss." }
+    ];
+
+    // Particles (Marine Snow)
+    const particles = Array.from({ length: 80 }, () => ({
+      x: Math.random() * canvas.width,
+      y: Math.random() * canvas.height,
+      radius: Math.random() * 2.5 + 0.5,
+      speedY: Math.random() * 0.4 + 0.1,
+      alpha: Math.random() * 0.6 + 0.2
+    }));
+
+    // Web Audio Synthesizer
+    function initAudio() {
+      if (!audioCtx) {
+        audioCtx = new (window.AudioContext || window.webkitAudioContext)();
+      }
+      if (audioCtx.state === 'suspended') {
+        audioCtx.resume();
+      }
+    }
+
+    // 1. Keyframe Images
+    const crushedImg = new Image();
+    crushedImg.src = './assets/scene1_crushed_submarine.jpg';
+    let crushedLoaded = false;
+    crushedImg.onload = () => { crushedLoaded = true; };
+
+    const bgImg = new Image();
+    bgImg.src = './assets/scene1_keyframe.jpg';
+    let bgLoaded = false;
+    bgImg.onload = () => { bgLoaded = true; };
+
+    // Procedural Glass Cracks (Spiderweb lines)
+    const crackPoints = [
+      [{x: 360, y: 640}, {x: 220, y: 480}, {x: 120, y: 390}, {x: 50, y: 310}],
+      [{x: 360, y: 640}, {x: 480, y: 490}, {x: 580, y: 380}, {x: 670, y: 290}],
+      [{x: 360, y: 640}, {x: 310, y: 780}, {x: 230, y: 920}, {x: 140, y: 1080}],
+      [{x: 360, y: 640}, {x: 430, y: 790}, {x: 520, y: 950}, {x: 610, y: 1110}],
+      [{x: 360, y: 640}, {x: 200, y: 620}, {x: 80, y: 630}],
+      [{x: 360, y: 640}, {x: 520, y: 650}, {x: 660, y: 670}]
+    ];
+
+    function playImplosionSound() {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+
+      // 1. Low frequency shockwave boom
+      const boom = audioCtx.createOscillator();
+      const boomGain = audioCtx.createGain();
+      boom.type = 'triangle';
+      boom.frequency.setValueAtTime(140, now);
+      boom.frequency.exponentialRampToValueAtTime(28, now + 1.6);
+      boomGain.gain.setValueAtTime(0.9, now);
+      boomGain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+      boom.connect(boomGain);
+      boomGain.connect(audioCtx.destination);
+      boom.start(now);
+      boom.stop(now + 1.6);
+
+      // 2. Metal shear screech
+      const screech = audioCtx.createOscillator();
+      const screechGain = audioCtx.createGain();
+      screech.type = 'sawtooth';
+      screech.frequency.setValueAtTime(320, now);
+      screech.frequency.linearRampToValueAtTime(950, now + 0.4);
+      screech.frequency.exponentialRampToValueAtTime(80, now + 1.2);
+      screechGain.gain.setValueAtTime(0.4, now);
+      screechGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+      screech.connect(screechGain);
+      screechGain.connect(audioCtx.destination);
+      screech.start(now);
+      screech.stop(now + 1.2);
+    }
+
+    function playSonarPing() {
+      if (!audioCtx) return;
+      const osc = audioCtx.createOscillator();
+      const gain = audioCtx.createGain();
+      osc.type = 'sine';
+      osc.frequency.setValueAtTime(1400, audioCtx.currentTime);
+      osc.frequency.exponentialRampToValueAtTime(700, audioCtx.currentTime + 0.8);
+      gain.gain.setValueAtTime(0.3, audioCtx.currentTime);
+      gain.gain.exponentialRampToValueAtTime(0.001, audioCtx.currentTime + 0.8);
+      osc.connect(gain);
+      gain.connect(audioCtx.destination);
+      osc.start();
+      osc.stop(audioCtx.currentTime + 0.8);
+    }
+
+    // Main Draw Function
+    function render(t) {
+      ctx.save();
+
+      // Camera Trauma / Screen Shake during Implosion (0 <= t < 4)
+      if (t < 4.0) {
+        const trauma = Math.max(0, 1.0 - (t / 4.0));
+        const shakeMag = trauma * trauma * 24;
+        const shakeX = (Math.random() - 0.5) * shakeMag;
+        const shakeY = (Math.random() - 0.5) * shakeMag;
+        ctx.translate(shakeX, shakeY);
+      }
+
+      if (crushedLoaded && t < 4.0) {
+        // Scene 1: Catastrophic Submarine Implosion (Extreme Hook)
+        const scale = 1.0 + t * 0.05;
+        const sw = canvas.width / scale;
+        const sh = canvas.height / scale;
+        const sx = (canvas.width - sw) / 2;
+        const sy = (canvas.height - sh) / 2;
+        ctx.drawImage(crushedImg, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+        // Flashing Emergency Crimson Strobe
+        const strobe = Math.sin(t * 14) > 0 ? 0.35 : 0.08;
+        ctx.fillStyle = `rgba(239, 68, 68, ${strobe})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Exploding Spiderweb Cracks across Viewport
+        const crackProgress = Math.min(1.0, t / 1.8);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#06b6d4';
+        ctx.shadowBlur = 10;
+        crackPoints.forEach(branch => {
+          ctx.beginPath();
+          ctx.moveTo(branch[0].x, branch[0].y);
+          for (let i = 1; i < branch.length; i++) {
+            if (i / branch.length <= crackProgress) {
+              ctx.lineTo(branch[i].x, branch[i].y);
+            }
+          }
+          ctx.stroke();
+        });
+        ctx.shadowBlur = 0;
+
+        // Emergency HUD Warning Overlay
+        ctx.fillStyle = '#ef4444';
+        ctx.font = '900 22px monospace';
+        ctx.fillText('⚠️ HULL BREACH DETECTED', 60, 140);
+        ctx.font = '14px monospace';
+        ctx.fillStyle = '#fca5a5';
+        ctx.fillText('PRESSURE: 1,120 ATM (16,460 PSI)', 60, 168);
+        ctx.fillText('CRITICAL STRUCTURAL COLLAPSE', 60, 190);
+
+      } else if (bgLoaded && t >= 4.0 && t < 15.0) {
+        // Scene 2: Submarine Probe Descending into the Trench Abyss
+        const scale = 1.0 + ((t - 4.0) / 11.0) * 0.08;
+        const sw = canvas.width / scale;
+        const sh = canvas.height / scale;
+        const sx = (canvas.width - sw) / 2;
+        const sy = (canvas.height - sh) / 2;
+        ctx.drawImage(bgImg, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+        // Submarine Spotlights
+        const spotlightX = canvas.width / 2 + Math.sin(t * 0.8) * 40;
+        const spotGrad = ctx.createRadialGradient(spotlightX, 100, 20, spotlightX, 450, 400);
+        spotGrad.addColorStop(0, 'rgba(6, 182, 212, 0.25)');
+        spotGrad.addColorStop(0.5, 'rgba(6, 182, 212, 0.08)');
+        spotGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = spotGrad;
+        ctx.beginPath();
+        ctx.arc(spotlightX, 450, 400, 0, Math.PI * 2);
+        ctx.fill();
+
+      } else {
+        // Scene 3 & 4: Pitch Black Abyss, Serpentine Organism, & Eye
+        const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
+        grad.addColorStop(0, '#020617');
+        grad.addColorStop(0.6, '#030a1c');
+        grad.addColorStop(1, '#000000');
+        ctx.fillStyle = grad;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+      }
+
+      // 3. Marine Snow Particles
+      ctx.fillStyle = '#67e8f9';
+      particles.forEach(p => {
+        p.y += p.speedY;
+        if (p.y > canvas.height) p.y = 0;
+        ctx.globalAlpha = p.alpha;
+        ctx.beginPath();
+        ctx.arc(p.x, p.y, p.radius, 0, Math.PI * 2);
+        ctx.fill();
+      });
+      ctx.globalAlpha = 1.0;
+
+      // 4. Trench Walls (Left & Right Jagged Silhouettes)
+      ctx.fillStyle = '#010409';
+      ctx.beginPath();
+      ctx.moveTo(0, 0);
+      ctx.lineTo(120 + Math.sin(t) * 15, 300);
+      ctx.lineTo(80, 700);
+      ctx.lineTo(140, canvas.height);
+      ctx.lineTo(0, canvas.height);
+      ctx.fill();
+
+      ctx.beginPath();
+      ctx.moveTo(canvas.width, 0);
+      ctx.lineTo(canvas.width - 110, 350);
+      ctx.lineTo(canvas.width - 70, 800);
+      ctx.lineTo(canvas.width - 130, canvas.height);
+      ctx.lineTo(canvas.width, canvas.height);
+      ctx.fill();
+
+      // 5. Scene Highlights by Time
+      if (t >= 15 && t < 32) {
+        // Serpentine Bioluminescent Organism Gliding
+        const creatureX = (canvas.width + 200) - ((t - 15) / 17) * (canvas.width + 400);
+        const creatureY = 600 + Math.sin(t * 2) * 50;
+
+        ctx.strokeStyle = 'rgba(6, 182, 212, 0.4)';
+        ctx.lineWidth = 18;
+        ctx.lineCap = 'round';
+        ctx.beginPath();
+        ctx.moveTo(creatureX, creatureY);
+        for (let i = 0; i < 8; i++) {
+          const segX = creatureX + (i * 35);
+          const segY = creatureY + Math.sin(t * 3 + i * 0.5) * 30;
+          ctx.lineTo(segX, segY);
+        }
+        ctx.stroke();
+
+        // Glowing blue light clusters (photophores)
+        for (let i = 0; i < 8; i++) {
+          const segX = creatureX + (i * 35);
+          const segY = creatureY + Math.sin(t * 3 + i * 0.5) * 30;
+          ctx.fillStyle = '#38bdf8';
+          ctx.shadowColor = '#06b6d4';
+          ctx.shadowBlur = 15;
+          ctx.beginPath();
+          ctx.arc(segX, segY, 5, 0, Math.PI * 2);
+          ctx.fill();
+          ctx.shadowBlur = 0;
+        }
+      } else if (t >= 45 && t < 54) {
+        // Giant Glowing Eye Opening
+        const eyeX = canvas.width / 2;
+        const eyeY = 620;
+        const eyeOpen = Math.min(1.0, (t - 45) / 3);
+
+        ctx.fillStyle = '#06b6d4';
+        ctx.shadowColor = '#22d3ee';
+        ctx.shadowBlur = 25;
+        ctx.beginPath();
+        ctx.ellipse(eyeX, eyeY, 50, 30 * eyeOpen, 0, 0, Math.PI * 2);
+        ctx.fill();
+
+        ctx.fillStyle = '#000';
+        ctx.beginPath();
+        ctx.ellipse(eyeX, eyeY, 12, 26 * eyeOpen, 0, 0, Math.PI * 2);
+        ctx.fill();
+        ctx.shadowBlur = 0;
+      }
+
+      // 6. Sonar Grid HUD
+      ctx.strokeStyle = 'rgba(6, 182, 212, 0.15)';
+      ctx.lineWidth = 1;
+      ctx.strokeRect(40, 40, canvas.width - 80, canvas.height - 80);
+      ctx.fillStyle = 'rgba(6, 182, 212, 0.6)';
+      ctx.font = '14px monospace';
+      ctx.fillText(`DEPTH: ${(10850 + Math.floor(t * 4)).toLocaleString()} M`, 56, 70);
+      ctx.fillText(`SONAR: ACTIVE (HADAL-Z)`, 56, 92);
+      ctx.restore();
+    }
+
+    // Playback Loop
+    let lastStamp = 0;
+    let lastSonarPing = 0;
+    let hasPlayedImplosion = false;
+
+    function step(stamp) {
+      if (!lastStamp) lastStamp = stamp;
+      const dt = (stamp - lastStamp) / 1000;
+      lastStamp = stamp;
+
+      if (isPlaying) {
+        currentTime += dt;
+
+        // Trigger Implosion sound at start
+        if (currentTime < 0.2 && !hasPlayedImplosion) {
+          playImplosionSound();
+          hasPlayedImplosion = true;
+        }
+
+        if (currentTime >= TOTAL_DURATION) {
+          currentTime = 0;
+          isPlaying = false;
+          hasPlayedImplosion = false;
+          btnPlay.textContent = '▶ Play Preview';
+          if (mediaRecorder && mediaRecorder.state === 'recording') {
+            mediaRecorder.stop();
+          }
+        }
+
+        // Sonar Ping every 3 seconds after implosion
+        if (currentTime > 4.0 && currentTime - lastSonarPing > 3.0) {
+          playSonarPing();
+          lastSonarPing = currentTime;
+        }
+          lastSonarPing = currentTime;
+        }
+
+        // Update Captions
+        const activeItem = SCRIPT_TIMELINE.find(item => currentTime >= item.start && currentTime < item.end);
+        if (activeItem) {
+          badgeEl.textContent = activeItem.badge;
+          captionEl.textContent = activeItem.text;
+        }
+
+        // Update Timer
+        const mins = Math.floor(currentTime / 60).toString().padStart(2, '0');
+        const secs = Math.floor(currentTime % 60).toString().padStart(2, '0');
+        timerEl.textContent = `Time: ${mins}:${secs} / 01:00`;
+      }
+
+      render(currentTime);
+      requestAnimationFrame(step);
+    }
+    requestAnimationFrame(step);
+
+    // Controls
+    btnPlay.addEventListener('click', () => {
+      initAudio();
+      if (!isPlaying && currentTime === 0) {
+        hasPlayedImplosion = false;
+      }
+      isPlaying = !isPlaying;
+      btnPlay.textContent = isPlaying ? '⏸ Pause' : '▶ Play Preview';
+    });
+
+    btnRecord.addEventListener('click', () => {
+      initAudio();
+      currentTime = 0;
+      hasPlayedImplosion = false;
+      isPlaying = true;
+      btnPlay.textContent = '⏸ Pause';
+      btnRecord.classList.add('recording');
+      btnRecord.textContent = '⏺ Recording...';
+
+      const stream = canvas.captureStream(60);
+      recordedChunks = [];
+      mediaRecorder = new MediaRecorder(stream, { mimeType: 'video/webm;codecs=vp9' });
+
+      mediaRecorder.ondataavailable = (e) => {
+        if (e.data.size > 0) recordedChunks.push(e.data);
+      };
+
+      mediaRecorder.onstop = () => {
+        btnRecord.classList.remove('recording');
+        btnRecord.textContent = '⏺ Export Video';
+        const blob = new Blob(recordedChunks, { type: 'video/webm' });
+        const url = URL.createObjectURL(blob);
+        const a = document.createElement('a');
+        a.href = url;
+        a.download = 'abyssal_echoes_video_01.webm';
+        a.click();
+      };
+
+      mediaRecorder.start();
+    });
+  </script>
+</body>
+</html>
