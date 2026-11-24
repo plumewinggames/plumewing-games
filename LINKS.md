@@ -10,9 +10,13 @@
 >
 > ---
 >
-> ### ▲ Alternative: Vercel Cloud
-> * **Portfolio Hub:** [https://agile-tundra-hcpm2v3.tmp.now/](https://agile-tundra-hcpm2v3.tmp.now/)
-> * **Claim deployment to your Vercel account:** [Claim Deployment Link](https://vercel.com/claim-deployment?code=aa6fdf39-e1d3-4bd8-b1e5-8677250cc8ea)
+> ### ▲ Vercel Cloud (Fast Worldwide Edge)
+> * **🎮 Portfolio Hub (Live Now):** [https://instant-hazel-xu18zfp.tmp.now/](https://instant-hazel-xu18zfp.tmp.now/)
+> * **🐡 Puff Guard:** [https://instant-hazel-xu18zfp.tmp.now/puff-guard/index.html](https://instant-hazel-xu18zfp.tmp.now/puff-guard/index.html)
+> * **✈️ Track A (3D Flight):** [https://instant-hazel-xu18zfp.tmp.now/track-a-flight/index.html](https://instant-hazel-xu18zfp.tmp.now/track-a-flight/index.html)
+> * **🦖 Track B (Caveman Chase):** [https://instant-hazel-xu18zfp.tmp.now/track-b-chase/index.html](https://instant-hazel-xu18zfp.tmp.now/track-b-chase/index.html)
+> * **🔒 Claim Deployment to plumewinggames Account:** [Claim Link](https://vercel.com/claim-deployment?code=abc77d62-26b6-4913-ad0c-7eca2ec50f87)
+> * **⚡ Permanent Never-Expiring Auto-Deploy (1-Click):** [Import GitHub Repo to Vercel](https://vercel.com/new/import?s=https%3A%2F%2Fgithub.com%2Fplumewinggames%2Fplumewing-games)
 
 ---
 
