@@ -14,7 +14,8 @@ export default defineConfig({
         main: resolve(__dirname, 'index.html'),
         puffGuard: resolve(__dirname, 'puff-guard/index.html'),
         trackA: resolve(__dirname, 'track-a-flight/index.html'),
-        trackB: resolve(__dirname, 'track-b-chase/index.html')
+        trackB: resolve(__dirname, 'track-b-chase/index.html'),
+        youtubeStudio: resolve(__dirname, 'youtube-abyssal-echoes/preview.html')
       }
     }
   }
