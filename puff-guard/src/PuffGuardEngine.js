@@ -194,6 +194,30 @@ export class PuffGuardEngine {
         alpha: Math.random() * 0.5 + 0.3
       });
     }
+
+    // Hybrid: Marine snow & Suspended luminous plankton
+    this.marineSnow = [];
+    for (let i = 0; i < 45; i++) {
+      this.marineSnow.push({
+        x: Math.random() * this.baseW,
+        y: Math.random() * this.baseH,
+        size: Math.random() * 2 + 1,
+        vx: (Math.random() - 0.5) * 12,
+        vy: -Math.random() * 14 - 6,
+        alpha: Math.random() * 0.45 + 0.2,
+        phase: Math.random() * Math.PI * 2
+      });
+    }
+
+    // Hybrid: Distant background roaming megafauna shadow (Whale / Giant Manta)
+    this.distantCreature = {
+      x: -240,
+      y: 85,
+      speed: 18,
+      phase: 0
+    };
+
+    this.player.swimCycle = 0;
   }
 
   triggerDiverAbility() {
@@ -290,6 +314,11 @@ export class PuffGuardEngine {
     if (Math.abs(this.player.vx) > 5 || Math.abs(this.player.vy) > 5) {
       this.player.angle = Math.atan2(this.player.vy, this.player.vx);
     }
+
+    // Kinematic flipper swim cycle
+    const currentSpeed = Math.hypot(this.player.vx, this.player.vy);
+    const kickRate = this.player.isDashing ? 24 : (currentSpeed > 10 ? 12 : 3.5);
+    this.player.swimCycle = (this.player.swimCycle || 0) + kickRate * dt;
 
     // Ability cooldown decay
     if (this.player.abilityCooldown > 0) {
@@ -468,6 +497,28 @@ export class PuffGuardEngine {
       if (f.x < -50) f.x = this.baseW + 50;
     }
 
+    // 8. Marine Snow & Plankton Drift
+    if (this.marineSnow) {
+      for (const p of this.marineSnow) {
+        p.x += p.vx * dt;
+        p.y += p.vy * dt;
+        p.phase += dt * 2.5;
+        if (p.y < 0) { p.y = this.baseH; p.x = Math.random() * this.baseW; }
+        if (p.x < 0) p.x = this.baseW;
+        if (p.x > this.baseW) p.x = 0;
+      }
+    }
+
+    // 9. Distant Background Megafauna
+    if (this.distantCreature) {
+      this.distantCreature.x += this.distantCreature.speed * dt;
+      this.distantCreature.phase += dt * 1.8;
+      if (this.distantCreature.x > this.baseW + 260) {
+        this.distantCreature.x = -260;
+        this.distantCreature.y = 70 + Math.random() * 120;
+      }
+    }
+
     // Camera Trauma Shake Decay
     if (this.trauma > 0) {
       this.trauma = Math.max(0, this.trauma - 1.2 * dt);
@@ -642,7 +693,7 @@ export class PuffGuardEngine {
     });
   }
 
-  // --- RENDERING PIPELINE (Attractive VFX & Clean Border Isolation) ---
+  // --- RENDERING PIPELINE: OPTION 3 HYBRID (Polished Geometry + Volumetric Lighting + 4-Plane Depth) ---
   render() {
     // 0. Clean entire display canvas to eliminate trailing ghosts, shake artifacts & border clutter
     this.ctx.fillStyle = '#020617';
@@ -657,44 +708,57 @@ export class PuffGuardEngine {
     this.ctx.rect(0, 0, this.baseW, this.baseH);
     this.ctx.clip();
 
-    // 1. Water Background Gradient
+    // 1. Water Background Gradient (Depth atmosphere)
     const waterGrad = this.ctx.createLinearGradient(0, 0, 0, this.baseH);
     waterGrad.addColorStop(0, this.reef.waterTop);
-    waterGrad.addColorStop(1, this.reef.waterBottom);
+    waterGrad.addColorStop(0.72, this.reef.waterBottom);
+    waterGrad.addColorStop(1, '#020617');
     this.ctx.fillStyle = waterGrad;
     this.ctx.fillRect(0, 0, this.baseW, this.baseH);
 
-    // 2. Volumetric God Rays
+    // 2. Layer 1: Distant Background Silhouettes (Sunken Galleon, Sea Arches, Roaming Megafauna)
+    this.drawDistantBackground();
+
+    // 3. Volumetric God Rays (Reefs with surface sunlight)
     if (this.reef.hasGodRays) {
       this.drawGodRays();
     }
 
-    // 3. Dynamic Water Caustics on Seabed
+    // 4. Layer 2: Suspended Marine Snow & Plankton Motes
+    this.drawMarineSnow();
+
+    // 5. Dynamic Caustic Water Nets on Seabed
     this.drawWaterCaustics();
 
-    // 4. Glowing Coral Reef Bottom
+    // 6. Layer 3: Living Interactive Coral Reef Bottom (Swaying Anemones, Staghorn Corals)
     this.drawCoralReef();
 
-    // 5. Oysters & Prize Drops
+    // 7. Oysters & Glowing Prize Drops
     this.drawOystersAndPrizes();
 
-    // 6. Ambient Friendly Fish
+    // 8. Ambient Friendly Fish (Clownfish & Blue Tangs with fluid fins)
     this.drawDecorativeFish();
 
-    // 7. Predators (Puffers, Sharks, Eels)
+    // 9. Detailed Predators (Puffers, Apex Tiger Shark, Electric Moray, Barracuda)
     this.drawPredators();
 
-    // 8. Player Diver
+    // 10. Player Diver & Articulated Anatomy
     this.drawPlayer();
 
-    // 9. Sonic Pulse Rings
+    // 11. Volumetric Headlamp Light Cone (Dynamic Screen Blending)
+    this.drawDiverHeadlamp();
+
+    // 12. Sonic Pulse Rings & Shockwaves
     this.drawSonicRings();
 
-    // 10. Bubbles & Sparkles
+    // 13. Fizzy Air Bubbles & Sparkles
     this.drawBubblesAndSparkles();
 
-    // 11. Subtle inner border vignette to frame gameplay cleanly
-    this.ctx.strokeStyle = 'rgba(56, 189, 248, 0.25)';
+    // 14. Layer 4: Foreground Cinematic Bokeh / Kelp Silhouettes
+    this.drawForegroundBokeh();
+
+    // 15. Subtle Inner Border Vignette
+    this.ctx.strokeStyle = 'rgba(56, 189, 248, 0.22)';
     this.ctx.lineWidth = 2;
     this.ctx.strokeRect(1, 1, this.baseW - 2, this.baseH - 2);
 
@@ -712,98 +776,355 @@ export class PuffGuardEngine {
     }
   }
 
+  // --- LAYER 1: DISTANT UNDERWATER BACKGROUND SILHOUETTES ---
+  drawDistantBackground() {
+    this.ctx.save();
+
+    // Distant mountain ridge and rock arches
+    this.ctx.fillStyle = 'rgba(15, 23, 42, 0.35)';
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, this.baseH - 60);
+    this.ctx.quadraticCurveTo(this.baseW * 0.2, this.baseH - 120, this.baseW * 0.45, this.baseH - 70);
+    this.ctx.quadraticCurveTo(this.baseW * 0.7, this.baseH - 140, this.baseW, this.baseH - 80);
+    this.ctx.lineTo(this.baseW, this.baseH);
+    this.ctx.lineTo(0, this.baseH);
+    this.ctx.closePath();
+    this.ctx.fill();
+
+    // Reef 3: Distant Sunken Galleon Silhouette
+    if (this.reef.hasShipwreckDebris) {
+      this.ctx.fillStyle = 'rgba(15, 23, 42, 0.45)';
+      this.ctx.beginPath();
+      // Hull
+      this.ctx.moveTo(120, this.baseH - 60);
+      this.ctx.lineTo(240, this.baseH - 75);
+      this.ctx.lineTo(280, this.baseH - 110);
+      this.ctx.lineTo(100, this.baseH - 95);
+      this.ctx.closePath();
+      this.ctx.fill();
+      // Broken Mainmast
+      this.ctx.fillRect(170, this.baseH - 180, 8, 85);
+      this.ctx.fillRect(145, this.baseH - 150, 60, 4);
+    }
+
+    // Reef 4: Volcanic Hydrothermal Vent Chimneys
+    if (this.reef.hasHeatVents) {
+      this.ctx.fillStyle = 'rgba(30, 10, 10, 0.55)';
+      this.ctx.fillRect(180, this.baseH - 140, 24, 100);
+      this.ctx.fillRect(520, this.baseH - 170, 32, 130);
+      this.ctx.fillRect(740, this.baseH - 120, 20, 80);
+    }
+
+    // Roaming Megafauna (Giant Whale / Colossal Manta Shadow)
+    if (this.distantCreature) {
+      const c = this.distantCreature;
+      this.ctx.save();
+      this.ctx.translate(c.x, c.y);
+      this.ctx.fillStyle = 'rgba(15, 23, 42, 0.28)';
+
+      // Whale Torso
+      this.ctx.beginPath();
+      this.ctx.ellipse(0, 0, 75, 22, 0, 0, Math.PI * 2);
+      this.ctx.fill();
+
+      // Pectoral Fin
+      this.ctx.beginPath();
+      this.ctx.moveTo(-10, 5);
+      this.ctx.lineTo(15, 30);
+      this.ctx.lineTo(5, 12);
+      this.ctx.closePath();
+      this.ctx.fill();
+
+      // Tail Fluke with sinusoidal swimming wave
+      const tailOsc = Math.sin(c.phase) * 6;
+      this.ctx.beginPath();
+      this.ctx.moveTo(-70, 0);
+      this.ctx.lineTo(-95, -16 + tailOsc);
+      this.ctx.lineTo(-95, 16 + tailOsc);
+      this.ctx.closePath();
+      this.ctx.fill();
+
+      this.ctx.restore();
+    }
+
+    this.ctx.restore();
+  }
+
+  // --- VOLUMETRIC SUNBEAM GOD RAYS ---
   drawGodRays() {
     this.ctx.save();
-    this.ctx.fillStyle = `rgba(255, 255, 255, ${this.reef.godRayOpacity || 0.25})`;
-    for (let i = 0; i < 6; i++) {
-      const x = this.baseW * (0.15 + i * 0.16) + Math.sin(Date.now() * 0.001 + i) * 20;
+    const time = Date.now() * 0.0008;
+    for (let i = 0; i < 5; i++) {
+      const x = this.baseW * (0.12 + i * 0.2) + Math.sin(time + i * 1.2) * 28;
+      const rayGrad = this.ctx.createLinearGradient(x, 0, x - 120, this.baseH * 0.85);
+      rayGrad.addColorStop(0, `rgba(255, 255, 255, ${this.reef.godRayOpacity || 0.28})`);
+      rayGrad.addColorStop(0.65, `rgba(186, 230, 253, ${(this.reef.godRayOpacity || 0.28) * 0.4})`);
+      rayGrad.addColorStop(1, 'rgba(255, 255, 255, 0)');
+      this.ctx.fillStyle = rayGrad;
+
       this.ctx.beginPath();
       this.ctx.moveTo(x, 0);
-      this.ctx.lineTo(x + 70, 0);
-      this.ctx.lineTo(x - 80, this.baseH);
-      this.ctx.lineTo(x - 170, this.baseH);
+      this.ctx.lineTo(x + 75, 0);
+      this.ctx.lineTo(x - 90, this.baseH * 0.9);
+      this.ctx.lineTo(x - 175, this.baseH * 0.9);
       this.ctx.closePath();
       this.ctx.fill();
     }
     this.ctx.restore();
   }
 
+  // --- LAYER 2: MARINE SNOW & SUSPENDED PLANKTON ---
+  drawMarineSnow() {
+    if (!this.marineSnow) return;
+    this.ctx.save();
+
+    for (const p of this.marineSnow) {
+      // Test if particle is inside the diver's volumetric headlamp cone
+      const dx = p.x - this.player.x;
+      const dy = p.y - this.player.y;
+      const dist = Math.hypot(dx, dy);
+      const angle = Math.atan2(dy, dx);
+      let diff = Math.abs(angle - this.player.angle);
+      if (diff > Math.PI) diff = Math.PI * 2 - diff;
+
+      const inCone = dist < 250 && diff < 0.42;
+      const alpha = inCone ? Math.min(0.95, p.alpha * 2.5) : p.alpha;
+      const radius = inCone ? p.size * 1.5 : p.size;
+
+      this.ctx.fillStyle = inCone ? 'rgba(224, 242, 254, 0.9)' : `rgba(186, 230, 253, ${alpha})`;
+      if (inCone) {
+        this.ctx.shadowColor = '#bae6fd';
+        this.ctx.shadowBlur = 6;
+      } else {
+        this.ctx.shadowBlur = 0;
+      }
+
+      this.ctx.beginPath();
+      this.ctx.arc(p.x, p.y, radius, 0, Math.PI * 2);
+      this.ctx.fill();
+    }
+
+    this.ctx.restore();
+  }
+
+  // --- DYNAMIC CAUSTIC LIGHT NETS ON SEABED ---
   drawWaterCaustics() {
     this.ctx.save();
     this.ctx.strokeStyle = this.reef.causticColor;
-    this.ctx.lineWidth = 1.5;
-    const time = Date.now() * 0.002;
-    for (let x = 0; x < this.baseW; x += 40) {
-      this.ctx.beginPath();
-      this.ctx.moveTo(x, this.baseH - 45);
-      const cy = this.baseH - 35 + Math.sin(x * 0.05 + time) * 8;
-      this.ctx.quadraticCurveTo(x + 20, cy, x + 40, this.baseH - 45);
-      this.ctx.stroke();
+    this.ctx.lineWidth = 1.8;
+    const time = Date.now() * 0.0022;
+
+    // Layer A: Forward undulating light net
+    this.ctx.beginPath();
+    for (let x = 0; x <= this.baseW; x += 36) {
+      const cy = this.baseH - 42 + Math.sin(x * 0.045 + time) * 7;
+      if (x === 0) this.ctx.moveTo(x, cy);
+      else this.ctx.quadraticCurveTo(x - 18, cy + 5, x, cy);
     }
+    this.ctx.stroke();
+
+    // Layer B: Counter-moving secondary reflection
+    this.ctx.strokeStyle = 'rgba(255, 255, 255, 0.12)';
+    this.ctx.beginPath();
+    for (let x = 0; x <= this.baseW; x += 48) {
+      const cy = this.baseH - 34 + Math.cos(x * 0.035 - time * 0.8) * 5;
+      if (x === 0) this.ctx.moveTo(x, cy);
+      else this.ctx.quadraticCurveTo(x - 24, cy - 4, x, cy);
+    }
+    this.ctx.stroke();
+
     this.ctx.restore();
   }
 
+  // --- LAYER 3: LIVING CORAL REEF ECOSYSTEM ---
   drawCoralReef() {
     this.ctx.save();
-    // Seabed substrate
-    this.ctx.fillStyle = '#0f172a';
-    this.ctx.fillRect(0, this.baseH - 35, this.baseW, 35);
+    const time = Date.now() * 0.0018;
 
-    // Glowing coral branches
-    for (let i = 0; i < 14; i++) {
-      const cx = 40 + i * 65;
-      const coralColor = this.reef.corals[i % this.reef.corals.length];
+    // 1. Organic Sandy Seabed Dune
+    const sandGrad = this.ctx.createLinearGradient(0, this.baseH - 46, 0, this.baseH);
+    sandGrad.addColorStop(0, '#1e293b');
+    sandGrad.addColorStop(1, '#020617');
+    this.ctx.fillStyle = sandGrad;
+    this.ctx.beginPath();
+    this.ctx.moveTo(0, this.baseH);
+    this.ctx.lineTo(0, this.baseH - 38);
+    for (let x = 0; x <= this.baseW; x += 60) {
+      const cy = this.baseH - 38 + Math.sin(x * 0.016) * 5;
+      this.ctx.lineTo(x, cy);
+    }
+    this.ctx.lineTo(this.baseW, this.baseH);
+    this.ctx.closePath();
+    this.ctx.fill();
+
+    // 2. Swaying Sea Anemone Colonies with Soft Inverse Kinematics
+    for (let a = 0; a < 6; a++) {
+      const ax = 75 + a * 160;
+      const ay = this.baseH - 35;
+      const anemoneColor = this.reef.corals[a % this.reef.corals.length];
+
+      this.ctx.strokeStyle = anemoneColor;
+      this.ctx.lineWidth = 3;
+      this.ctx.lineCap = 'round';
+
+      // 7 tentacles swaying in current
+      for (let t = 0; t < 7; t++) {
+        const spread = (t - 3) * 6;
+        const sway = Math.sin(time * 2.2 + a + t * 0.4) * 9;
+        const tipX = ax + spread + sway;
+        const tipY = ay - 24 + Math.cos(time * 1.8 + t) * 4;
+
+        this.ctx.beginPath();
+        this.ctx.moveTo(ax + spread * 0.4, ay);
+        this.ctx.quadraticCurveTo(ax + spread * 0.7 + sway * 0.5, ay - 12, tipX, tipY);
+        this.ctx.stroke();
+
+        // Glowing Bioluminescent Tentacle Tip Bulb
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.beginPath();
+        this.ctx.arc(tipX, tipY, 2, 0, Math.PI * 2);
+        this.ctx.fill();
+      }
+    }
+
+    // 3. Branching Staghorn Corals
+    for (let i = 0; i < 7; i++) {
+      const cx = 145 + i * 140;
+      const cy = this.baseH - 34;
+      const coralColor = this.reef.corals[(i + 1) % this.reef.corals.length];
+
       this.ctx.fillStyle = coralColor;
+      this.ctx.strokeStyle = coralColor;
+      this.ctx.lineWidth = 4;
+      this.ctx.lineCap = 'round';
+
+      // Central stem
       this.ctx.beginPath();
-      this.ctx.arc(cx, this.baseH - 32, 22, Math.PI, 0);
+      this.ctx.moveTo(cx, cy);
+      this.ctx.lineTo(cx, cy - 28);
+      this.ctx.stroke();
+
+      // Branching arms
+      this.ctx.beginPath();
+      this.ctx.moveTo(cx, cy - 14);
+      this.ctx.lineTo(cx - 12, cy - 26);
+      this.ctx.moveTo(cx, cy - 20);
+      this.ctx.lineTo(cx + 14, cy - 32);
+      this.ctx.stroke();
+
+      // Soft bulb tips
+      this.ctx.fillStyle = '#fef08a';
+      this.ctx.beginPath();
+      this.ctx.arc(cx, cy - 30, 3.5, 0, Math.PI * 2);
+      this.ctx.arc(cx - 12, cy - 28, 3, 0, Math.PI * 2);
+      this.ctx.arc(cx + 14, cy - 34, 3, 0, Math.PI * 2);
       this.ctx.fill();
     }
+
     this.ctx.restore();
   }
 
+  // --- OYSTERS & GLOWING PRIZE DROPS ---
   drawOystersAndPrizes() {
-    // Oysters
+    // 1. Ribbed Giant Oysters
     for (const o of this.oysters) {
       this.ctx.save();
       this.ctx.translate(o.x, o.y);
-      this.ctx.fillStyle = '#475569';
-      this.ctx.beginPath();
-      this.ctx.ellipse(0, 0, 18, o.isOpen ? 14 : 7, 0, 0, Math.PI * 2);
-      this.ctx.fill();
 
-      if (o.hasPearl && o.isOpen) {
-        // Glowing Pearl
-        this.ctx.fillStyle = '#ffffff';
-        this.ctx.shadowColor = '#38bdf8';
-        this.ctx.shadowBlur = 12;
+      // Bottom Shell Valve (Ribbed)
+      this.ctx.fillStyle = '#334155';
+      this.ctx.strokeStyle = '#475569';
+      this.ctx.lineWidth = 1.5;
+      this.ctx.beginPath();
+      this.ctx.ellipse(0, 0, 20, 9, 0, 0, Math.PI * 2);
+      this.ctx.fill();
+      this.ctx.stroke();
+
+      // Top Shell Valve (Tilts open when active)
+      if (o.isOpen) {
+        this.ctx.save();
+        this.ctx.translate(0, -6);
+        this.ctx.rotate(-0.35);
+        this.ctx.fillStyle = '#475569';
         this.ctx.beginPath();
-        this.ctx.arc(0, -2, 6, 0, Math.PI * 2);
+        this.ctx.ellipse(0, -6, 20, 8, 0, 0, Math.PI * 2);
         this.ctx.fill();
+        this.ctx.stroke();
+        this.ctx.restore();
+
+        // Iridescent Pearl
+        if (o.hasPearl) {
+          const pulse = Math.sin(Date.now() * 0.006) * 3;
+          this.ctx.shadowColor = '#38bdf8';
+          this.ctx.shadowBlur = 14 + pulse;
+
+          const pearlGrad = this.ctx.createRadialGradient(-2, -5, 1, 0, -4, 7);
+          pearlGrad.addColorStop(0, '#ffffff');
+          pearlGrad.addColorStop(0.5, '#bae6fd');
+          pearlGrad.addColorStop(1, '#38bdf8');
+          this.ctx.fillStyle = pearlGrad;
+
+          this.ctx.beginPath();
+          this.ctx.arc(0, -4, 6.5, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+      } else {
+        // Closed shell top
+        this.ctx.fillStyle = '#475569';
+        this.ctx.beginPath();
+        this.ctx.ellipse(0, -3, 20, 7, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.stroke();
       }
+
       this.ctx.restore();
     }
 
-    // Floating Prizes
+    // 2. Floating Collectible Pearls & Golden Shells
     for (const p of this.prizes) {
       this.ctx.save();
       this.ctx.translate(p.x, p.y);
+
       if (p.type === 'pearl') {
-        this.ctx.fillStyle = '#ffffff';
+        const floatOsc = Math.sin(Date.now() * 0.005 + p.x) * 4;
         this.ctx.shadowColor = '#38bdf8';
-        this.ctx.shadowBlur = 10;
+        this.ctx.shadowBlur = 12;
+
+        const pearlGrad = this.ctx.createRadialGradient(-2, floatOsc - 2, 1, 0, floatOsc, 8);
+        pearlGrad.addColorStop(0, '#ffffff');
+        pearlGrad.addColorStop(0.6, '#bae6fd');
+        pearlGrad.addColorStop(1, '#0284c7');
+        this.ctx.fillStyle = pearlGrad;
+
         this.ctx.beginPath();
-        this.ctx.arc(0, 0, 7, 0, Math.PI * 2);
+        this.ctx.arc(0, floatOsc, 7.5, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Specular glint
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.beginPath();
+        this.ctx.arc(-2, floatOsc - 2, 2, 0, Math.PI * 2);
         this.ctx.fill();
       } else {
-        this.ctx.fillStyle = '#facc15';
+        // Golden Shell
+        this.ctx.shadowColor = '#facc15';
+        this.ctx.shadowBlur = 10;
+        this.ctx.fillStyle = '#eab308';
         this.ctx.beginPath();
-        this.ctx.ellipse(0, 0, 9, 6, 0, 0, Math.PI * 2);
+        this.ctx.ellipse(0, 0, 10, 7, 0.2, 0, Math.PI * 2);
         this.ctx.fill();
+
+        this.ctx.strokeStyle = '#fef08a';
+        this.ctx.lineWidth = 1.2;
+        this.ctx.beginPath();
+        this.ctx.arc(0, 0, 5, 0, Math.PI);
+        this.ctx.stroke();
       }
       this.ctx.restore();
     }
   }
 
+  // --- AMBIENT DECORATIVE FISH WITH FLUID FINS ---
   drawDecorativeFish() {
     for (const f of this.decorativeFish) {
       this.ctx.save();
@@ -811,42 +1132,77 @@ export class PuffGuardEngine {
       const dir = f.vx > 0 ? 1 : -1;
       this.ctx.scale(dir, 1);
 
-      // Tail oscillation
-      const tailOsc = Math.sin(f.wigglePhase) * 6;
+      const tailOsc = Math.sin(f.wigglePhase) * 7;
 
       if (f.type === 'clownfish') {
-        // Vibrant Orange Clownfish with White Stripes
-        this.ctx.fillStyle = '#ea580c';
+        // 1. Vibrant Orange Body Gradient
+        const fishGrad = this.ctx.createRadialGradient(-2, -2, 1, 0, 0, f.size);
+        fishGrad.addColorStop(0, '#fb923c');
+        fishGrad.addColorStop(0.8, '#ea580c');
+        fishGrad.addColorStop(1, '#c2410c');
+        this.ctx.fillStyle = fishGrad;
+
         this.ctx.beginPath();
-        this.ctx.ellipse(0, 0, f.size, f.size * 0.6, 0, 0, Math.PI * 2);
+        this.ctx.ellipse(0, 0, f.size, f.size * 0.62, 0, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // White Stripe
+        // 2. Crisp White Bands with Dark Trim
         this.ctx.fillStyle = '#ffffff';
-        this.ctx.fillRect(-2, -f.size * 0.55, 4, f.size * 1.1);
+        this.ctx.strokeStyle = '#1e293b';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.roundRect(-3, -f.size * 0.58, 6, f.size * 1.16, 2);
+        this.ctx.fill();
+        this.ctx.stroke();
 
-        // Tail
+        // 3. Flexible Fluttering Tail
         this.ctx.fillStyle = '#ea580c';
         this.ctx.beginPath();
         this.ctx.moveTo(-f.size * 0.8, 0);
-        this.ctx.lineTo(-f.size * 1.4, -6 + tailOsc);
-        this.ctx.lineTo(-f.size * 1.4, 6 + tailOsc);
+        this.ctx.lineTo(-f.size * 1.5, -7 + tailOsc);
+        this.ctx.lineTo(-f.size * 1.5, 7 + tailOsc);
         this.ctx.closePath();
+        this.ctx.fill();
+
+        // Eye
+        this.ctx.fillStyle = '#000000';
+        this.ctx.beginPath();
+        this.ctx.arc(f.size * 0.5, -f.size * 0.15, 2.5, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.beginPath();
+        this.ctx.arc(f.size * 0.55, -f.size * 0.18, 1, 0, Math.PI * 2);
         this.ctx.fill();
       } else {
-        // Blue Tang
-        this.ctx.fillStyle = '#2563eb';
+        // Royal Blue Tang with Signature Yellow Tail
+        this.ctx.fillStyle = '#1d4ed8';
         this.ctx.beginPath();
-        this.ctx.ellipse(0, 0, f.size, f.size * 0.7, 0, 0, Math.PI * 2);
+        this.ctx.ellipse(0, 0, f.size, f.size * 0.72, 0, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // Yellow Tail
+        // Black accent swoosh
+        this.ctx.fillStyle = '#0f172a';
+        this.ctx.beginPath();
+        this.ctx.ellipse(-2, -2, f.size * 0.55, f.size * 0.35, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Yellow Paddle Tail
         this.ctx.fillStyle = '#facc15';
         this.ctx.beginPath();
-        this.ctx.moveTo(-f.size * 0.8, 0);
-        this.ctx.lineTo(-f.size * 1.4, -8 + tailOsc);
-        this.ctx.lineTo(-f.size * 1.4, 8 + tailOsc);
+        this.ctx.moveTo(-f.size * 0.75, 0);
+        this.ctx.lineTo(-f.size * 1.55, -9 + tailOsc);
+        this.ctx.lineTo(-f.size * 1.55, 9 + tailOsc);
         this.ctx.closePath();
+        this.ctx.fill();
+
+        // Eye
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.beginPath();
+        this.ctx.arc(f.size * 0.52, -f.size * 0.18, 2.5, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = '#000000';
+        this.ctx.beginPath();
+        this.ctx.arc(f.size * 0.54, -f.size * 0.18, 1.4, 0, Math.PI * 2);
         this.ctx.fill();
       }
 
@@ -854,6 +1210,7 @@ export class PuffGuardEngine {
     }
   }
 
+  // --- DETAILED PREDATORS WITH TRACKING EYES & ANATOMY ---
   drawPredators() {
     for (const p of this.predators) {
       this.ctx.save();
@@ -862,66 +1219,244 @@ export class PuffGuardEngine {
       this.ctx.scale(p.scale, p.scale);
 
       if (p.type === 'puffer') {
-        // Inflatable Spiny Pufferfish
-        this.ctx.fillStyle = '#facc15';
-        this.ctx.beginPath();
-        this.ctx.arc(0, 0, 18, 0, Math.PI * 2);
-        this.ctx.fill();
+        // --- 1. DETAILED PORCUPINE PUFFERFISH ---
+        const isInflated = p.scale > 1.15;
+        const radius = 19;
 
-        // Spines if inflated
-        if (p.scale > 1.2) {
-          this.ctx.fillStyle = '#dc2626';
-          for (let a = 0; a < Math.PI * 2; a += Math.PI / 6) {
-            const sx = Math.cos(a) * 18;
-            const sy = Math.sin(a) * 18;
+        // Dynamic player-tracking pupil angle
+        const targetAngle = Math.atan2(this.player.y - p.y, this.player.x - p.x) - p.angle;
+        const pupilX = Math.cos(targetAngle) * 3;
+        const pupilY = Math.sin(targetAngle) * 3;
+
+        // Sharp Venom Spines (Radiating outward with glowing warning tips)
+        if (isInflated) {
+          const spineCount = 14;
+          for (let a = 0; a < Math.PI * 2; a += (Math.PI * 2) / spineCount) {
+            const bx = Math.cos(a) * (radius - 2);
+            const by = Math.sin(a) * (radius - 2);
+            const tx = Math.cos(a) * (radius + 9);
+            const ty = Math.sin(a) * (radius + 9);
+
+            const spineGrad = this.ctx.createLinearGradient(bx, by, tx, ty);
+            spineGrad.addColorStop(0, '#f59e0b');
+            spineGrad.addColorStop(0.7, '#ef4444');
+            spineGrad.addColorStop(1, '#ffffff');
+            this.ctx.fillStyle = spineGrad;
+
             this.ctx.beginPath();
-            this.ctx.arc(sx, sy, 3.5, 0, Math.PI * 2);
+            this.ctx.moveTo(bx + Math.cos(a + 1.57) * 2.5, by + Math.sin(a + 1.57) * 2.5);
+            this.ctx.lineTo(tx, ty);
+            this.ctx.lineTo(bx - Math.cos(a + 1.57) * 2.5, by - Math.sin(a + 1.57) * 2.5);
+            this.ctx.closePath();
             this.ctx.fill();
           }
         }
-      } else if (p.type === 'barracuda') {
-        // Sleek Silver Barracuda
-        this.ctx.fillStyle = '#94a3b8';
+
+        // Spherical Radial Gradient Body (Organic Ivory-to-Amber)
+        const pufferGrad = this.ctx.createRadialGradient(-4, -4, 2, 0, 0, radius);
+        pufferGrad.addColorStop(0, '#fef08a');
+        pufferGrad.addColorStop(0.65, '#f59e0b');
+        pufferGrad.addColorStop(1, isInflated ? '#dc2626' : '#d97706');
+        this.ctx.fillStyle = pufferGrad;
+
         this.ctx.beginPath();
-        this.ctx.ellipse(0, 0, 36, 10, 0, 0, Math.PI * 2);
+        this.ctx.arc(0, 0, radius, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // Sharp Teeth Jaw
+        // Mottled Leopard Freckles on Dorsal
+        this.ctx.fillStyle = 'rgba(120, 53, 15, 0.45)';
+        for (let i = 0; i < 6; i++) {
+          const fx = -10 + (i % 3) * 8;
+          const fy = -10 + Math.floor(i / 3) * 6;
+          this.ctx.beginPath();
+          this.ctx.arc(fx, fy, 1.8, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+
+        // Large Glossy Tracking Eye
         this.ctx.fillStyle = '#ffffff';
         this.ctx.beginPath();
-        this.ctx.moveTo(34, -4);
-        this.ctx.lineTo(38, 0);
-        this.ctx.lineTo(34, 4);
-        this.ctx.closePath();
-        this.ctx.fill();
-      } else if (p.type === 'eel') {
-        // Electric Moray Eel
-        this.ctx.fillStyle = '#059669';
-        this.ctx.beginPath();
-        this.ctx.ellipse(0, 0, 34, 8, 0, 0, Math.PI * 2);
+        this.ctx.arc(8, -5, 6, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // Electric Spark Arc
-        this.ctx.strokeStyle = '#38bdf8';
-        this.ctx.lineWidth = 2;
+        // Dark Iris & Pupil tracking diver
+        this.ctx.fillStyle = '#451a03';
         this.ctx.beginPath();
-        this.ctx.moveTo(-20, -10);
-        this.ctx.lineTo(0, -15);
-        this.ctx.lineTo(20, -10);
-        this.ctx.stroke();
+        this.ctx.arc(8 + pupilX * 0.7, -5 + pupilY * 0.7, 3.2, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // White Specular Eye Glint
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.beginPath();
+        this.ctx.arc(7, -7, 1.4, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Translucent Pectoral Fins with fluttering wave
+        const finWave = Math.sin(Date.now() * 0.012 + p.x) * 4;
+        this.ctx.fillStyle = 'rgba(254, 240, 138, 0.75)';
+        this.ctx.beginPath();
+        this.ctx.ellipse(-6, 8, 8, 4, 0.4 + finWave * 0.1, 0, Math.PI * 2);
+        this.ctx.fill();
+
       } else if (p.type === 'shark') {
-        // Apex Tiger Shark
-        this.ctx.fillStyle = '#334155';
+        // --- 2. APEX TIGER SHARK (Countershaded + Sinuous Wave) ---
+        const tailOsc = Math.sin(p.wiggle) * 11;
+
+        // Countershaded Body Gradient (Slate dorsal, ivory ventral)
+        const sharkGrad = this.ctx.createLinearGradient(0, -18, 0, 18);
+        sharkGrad.addColorStop(0, '#1e293b');
+        sharkGrad.addColorStop(0.65, '#475569');
+        sharkGrad.addColorStop(1, '#f1f5f9');
+        this.ctx.fillStyle = sharkGrad;
+
         this.ctx.beginPath();
-        this.ctx.ellipse(0, 0, 48, 16, 0, 0, Math.PI * 2);
+        this.ctx.ellipse(0, 0, 52, 17, 0, 0, Math.PI * 2);
         this.ctx.fill();
 
-        // Dorsal Fin
+        // Vertical Tiger Camouflage Stripes
+        this.ctx.strokeStyle = 'rgba(15, 23, 42, 0.4)';
+        this.ctx.lineWidth = 2.5;
+        for (let s = -18; s <= 18; s += 9) {
+          this.ctx.beginPath();
+          this.ctx.moveTo(s, -15);
+          this.ctx.lineTo(s - 4, -2);
+          this.ctx.stroke();
+        }
+
+        // Tall Triangular Dorsal Fin
+        this.ctx.fillStyle = '#1e293b';
         this.ctx.beginPath();
-        this.ctx.moveTo(0, -16);
-        this.ctx.lineTo(-12, -34);
-        this.ctx.lineTo(12, -16);
+        this.ctx.moveTo(2, -16);
+        this.ctx.lineTo(-14, -36);
+        this.ctx.lineTo(16, -16);
         this.ctx.closePath();
+        this.ctx.fill();
+
+        // Sweeping Sinuous Caudal Tail Fin
+        this.ctx.beginPath();
+        this.ctx.moveTo(-45, 0);
+        this.ctx.lineTo(-68, -26 + tailOsc);
+        this.ctx.lineTo(-58, 0);
+        this.ctx.lineTo(-70, 22 + tailOsc);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        // 5 Gill Slits
+        this.ctx.strokeStyle = '#0f172a';
+        this.ctx.lineWidth = 1.2;
+        for (let g = 0; g < 4; g++) {
+          this.ctx.beginPath();
+          this.ctx.moveTo(12 + g * 3.5, -4);
+          this.ctx.lineTo(11 + g * 3.5, 6);
+          this.ctx.stroke();
+        }
+
+        // Predatory Dark Eye
+        this.ctx.fillStyle = '#0f172a';
+        this.ctx.beginPath();
+        this.ctx.arc(38, -4, 3, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.beginPath();
+        this.ctx.arc(37.5, -4.5, 1, 0, Math.PI * 2);
+        this.ctx.fill();
+
+      } else if (p.type === 'eel') {
+        // --- 3. ELECTRIC MORAY EEL (Sinuous Spline & Electric Arcs) ---
+        this.ctx.strokeStyle = '#047857';
+        this.ctx.lineWidth = 14;
+        this.ctx.lineCap = 'round';
+        this.ctx.lineJoin = 'round';
+
+        // Serpentine Traveling Wave
+        this.ctx.beginPath();
+        this.ctx.moveTo(34, 0);
+        for (let seg = 1; seg <= 6; seg++) {
+          const sx = 34 - seg * 12;
+          const sy = Math.sin(p.wiggle + seg * 0.6) * 9;
+          this.ctx.lineTo(sx, sy);
+        }
+        this.ctx.stroke();
+
+        // Leopard Spotting
+        this.ctx.fillStyle = '#064e3b';
+        for (let seg = 1; seg <= 5; seg++) {
+          const sx = 34 - seg * 12;
+          const sy = Math.sin(p.wiggle + seg * 0.6) * 9;
+          this.ctx.beginPath();
+          this.ctx.arc(sx, sy, 2.5, 0, Math.PI * 2);
+          this.ctx.fill();
+        }
+
+        // Crackling Neon Electrical Arcs
+        this.ctx.strokeStyle = '#38bdf8';
+        this.ctx.lineWidth = 2.2;
+        this.ctx.shadowColor = '#06b6d4';
+        this.ctx.shadowBlur = 8;
+        this.ctx.beginPath();
+        this.ctx.moveTo(25, -6);
+        this.ctx.lineTo(10, -14);
+        this.ctx.lineTo(-5, -6);
+        this.ctx.lineTo(-20, -12);
+        this.ctx.stroke();
+        this.ctx.shadowBlur = 0;
+
+        // Fierce Yellow Eye
+        this.ctx.fillStyle = '#fde047';
+        this.ctx.beginPath();
+        this.ctx.arc(30, -3, 3, 0, Math.PI * 2);
+        this.ctx.fill();
+        this.ctx.fillStyle = '#000000';
+        this.ctx.beginPath();
+        this.ctx.arc(31, -3, 1.5, 0, Math.PI * 2);
+        this.ctx.fill();
+
+      } else if (p.type === 'barracuda') {
+        // --- 4. SWIFT METALLIC BARRACUDA ---
+        const tailOsc = Math.sin(p.wiggle * 1.5) * 5;
+
+        // Metallic Silver Torpedo Body
+        const terraGrad = this.ctx.createLinearGradient(0, -9, 0, 9);
+        terraGrad.addColorStop(0, '#94a3b8');
+        terraGrad.addColorStop(0.5, '#f8fafc');
+        terraGrad.addColorStop(1, '#475569');
+        this.ctx.fillStyle = terraGrad;
+
+        this.ctx.beginPath();
+        this.ctx.ellipse(0, 0, 42, 9, 0, 0, Math.PI * 2);
+        this.ctx.fill();
+
+        // Sharp Underslung Predatory Jaw
+        this.ctx.fillStyle = '#ffffff';
+        this.ctx.beginPath();
+        this.ctx.moveTo(38, -4);
+        this.ctx.lineTo(44, 2);
+        this.ctx.lineTo(36, 4);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        // Razor Teeth Glints
+        this.ctx.strokeStyle = '#ffffff';
+        this.ctx.lineWidth = 1;
+        this.ctx.beginPath();
+        this.ctx.moveTo(40, -1);
+        this.ctx.lineTo(40, 2);
+        this.ctx.stroke();
+
+        // Forked Caudal Fin
+        this.ctx.fillStyle = '#475569';
+        this.ctx.beginPath();
+        this.ctx.moveTo(-40, 0);
+        this.ctx.lineTo(-54, -14 + tailOsc);
+        this.ctx.lineTo(-46, 0);
+        this.ctx.lineTo(-54, 14 + tailOsc);
+        this.ctx.closePath();
+        this.ctx.fill();
+
+        // Cold Black Eye
+        this.ctx.fillStyle = '#000000';
+        this.ctx.beginPath();
+        this.ctx.arc(30, -2, 2.5, 0, Math.PI * 2);
         this.ctx.fill();
       }
 
@@ -929,59 +1464,152 @@ export class PuffGuardEngine {
     }
   }
 
+  // --- ARTICULATED PLAYER DIVER MODEL ---
   drawPlayer() {
     this.ctx.save();
     this.ctx.translate(this.player.x, this.player.y);
     this.ctx.rotate(this.player.angle);
 
-    // Blinking during invulnerability
+    // Invulnerability Blinking
     if (this.player.invulnerableTimer > 0 && Math.floor(Date.now() / 80) % 2 === 0) {
       this.ctx.restore();
       return;
     }
 
-    // Jax Kinetic Bubble Shield
+    // Jax Kinetic Bubble Shield (Iridescent Forcefield)
     if (this.player.isShielded) {
-      this.ctx.fillStyle = 'rgba(56, 189, 248, 0.35)';
+      const shieldPulse = Math.sin(Date.now() * 0.008) * 3;
+      this.ctx.save();
       this.ctx.strokeStyle = '#38bdf8';
       this.ctx.lineWidth = 3;
+      this.ctx.shadowColor = '#67e8f9';
+      this.ctx.shadowBlur = 16;
+
+      const shieldGrad = this.ctx.createRadialGradient(0, 0, 10, 0, 0, 38 + shieldPulse);
+      shieldGrad.addColorStop(0, 'rgba(56, 189, 248, 0.15)');
+      shieldGrad.addColorStop(0.85, 'rgba(103, 232, 249, 0.35)');
+      shieldGrad.addColorStop(1, 'rgba(255, 255, 255, 0.7)');
+      this.ctx.fillStyle = shieldGrad;
+
       this.ctx.beginPath();
-      this.ctx.arc(0, 0, 36, 0, Math.PI * 2);
+      this.ctx.arc(0, 0, 38 + shieldPulse, 0, Math.PI * 2);
       this.ctx.fill();
       this.ctx.stroke();
+      this.ctx.restore();
     }
 
-    // Diver Body (Neoprene Wetsuit)
-    this.ctx.fillStyle = this.diver.color;
-    this.ctx.beginPath();
-    this.ctx.roundRect(-22, -10, 44, 20, 8);
-    this.ctx.fill();
+    // 1. Dual Joint Swimming Flippers with Kinematic Kicking
+    const kick1 = Math.sin(this.player.swimCycle || 0) * 9;
+    const kick2 = Math.sin((this.player.swimCycle || 0) + Math.PI) * 9;
 
-    // Air Tank on Back
-    this.ctx.fillStyle = '#e2e8f0';
-    this.ctx.fillRect(-14, -16, 28, 6);
-
-    // Visor Mask
-    this.ctx.fillStyle = this.diver.visorColor;
-    this.ctx.shadowColor = '#67e8f9';
-    this.ctx.shadowBlur = 8;
-    this.ctx.beginPath();
-    this.ctx.arc(14, 0, 7, 0, Math.PI * 2);
-    this.ctx.fill();
-
-    // Flippers / Fins
     this.ctx.fillStyle = this.diver.suitAccent;
-    const finWiggle = Math.sin(Date.now() * 0.015) * 6;
+    // Leg 1 & Flipper
     this.ctx.beginPath();
-    this.ctx.moveTo(-22, -4);
-    this.ctx.lineTo(-34, -12 + finWiggle);
-    this.ctx.lineTo(-34, 12 + finWiggle);
+    this.ctx.moveTo(-20, -5);
+    this.ctx.lineTo(-34, -12 + kick1);
+    this.ctx.lineTo(-30, -5 + kick1);
     this.ctx.closePath();
+    this.ctx.fill();
+
+    // Leg 2 & Flipper
+    this.ctx.beginPath();
+    this.ctx.moveTo(-20, 5);
+    this.ctx.lineTo(-34, 12 + kick2);
+    this.ctx.lineTo(-30, 5 + kick2);
+    this.ctx.closePath();
+    this.ctx.fill();
+
+    // 2. Streamlined Hydrodynamic Wetsuit Torso
+    const suitGrad = this.ctx.createLinearGradient(0, -11, 0, 11);
+    suitGrad.addColorStop(0, this.diver.suitAccent);
+    suitGrad.addColorStop(0.5, this.diver.color);
+    suitGrad.addColorStop(1, '#0f172a');
+    this.ctx.fillStyle = suitGrad;
+
+    this.ctx.beginPath();
+    this.ctx.roundRect(-22, -10, 44, 20, 9);
+    this.ctx.fill();
+
+    // Contrast Seam Piping
+    this.ctx.strokeStyle = this.diver.suitAccent;
+    this.ctx.lineWidth = 1.6;
+    this.ctx.stroke();
+
+    // 3. Metallic Scuba Tank on Back
+    const tankGrad = this.ctx.createLinearGradient(-15, -17, 15, -17);
+    tankGrad.addColorStop(0, '#94a3b8');
+    tankGrad.addColorStop(0.5, '#f8fafc');
+    tankGrad.addColorStop(1, '#475569');
+    this.ctx.fillStyle = tankGrad;
+    this.ctx.beginPath();
+    this.ctx.roundRect(-15, -17, 30, 6.5, 3);
+    this.ctx.fill();
+
+    // Brass regulator valve cap
+    this.ctx.fillStyle = '#facc15';
+    this.ctx.fillRect(14, -16.5, 4, 5);
+
+    // 4. Chrome-Rimmed Diving Mask & Glass Visor
+    this.ctx.fillStyle = '#0f172a';
+    this.ctx.beginPath();
+    this.ctx.ellipse(14, -1, 9, 8, 0, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    const visorGrad = this.ctx.createRadialGradient(13, -2, 1, 14, -1, 8);
+    visorGrad.addColorStop(0, '#e0f2fe');
+    visorGrad.addColorStop(0.6, this.diver.visorColor);
+    visorGrad.addColorStop(1, '#0284c7');
+    this.ctx.fillStyle = visorGrad;
+    this.ctx.beginPath();
+    this.ctx.arc(14, -1, 7.2, 0, Math.PI * 2);
+    this.ctx.fill();
+
+    // Visor surface reflection arc
+    this.ctx.strokeStyle = '#ffffff';
+    this.ctx.lineWidth = 1.4;
+    this.ctx.beginPath();
+    this.ctx.arc(14, -1, 5.5, -1.8, -0.6);
+    this.ctx.stroke();
+
+    this.ctx.restore();
+  }
+
+  // --- VOLUMETRIC DIRECTIONAL HEADLAMP LIGHT CONE ---
+  drawDiverHeadlamp() {
+    this.ctx.save();
+    this.ctx.translate(this.player.x, this.player.y);
+    this.ctx.rotate(this.player.angle);
+
+    // Screen Composite for volumetric luminescence
+    this.ctx.globalCompositeOperation = 'screen';
+
+    // 45-degree volumetric light beam extending forward
+    const beamLength = 260;
+    const coneGrad = this.ctx.createRadialGradient(14, -1, 5, 14, -1, beamLength);
+    coneGrad.addColorStop(0, 'rgba(224, 242, 254, 0.42)');
+    coneGrad.addColorStop(0.35, 'rgba(56, 189, 248, 0.18)');
+    coneGrad.addColorStop(0.8, 'rgba(6, 182, 212, 0.06)');
+    coneGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+    this.ctx.fillStyle = coneGrad;
+
+    this.ctx.beginPath();
+    this.ctx.moveTo(14, -1);
+    this.ctx.arc(14, -1, beamLength, -0.42, 0.42);
+    this.ctx.closePath();
+    this.ctx.fill();
+
+    // Visor Headlamp Lens Glint
+    this.ctx.fillStyle = '#ffffff';
+    this.ctx.shadowColor = '#67e8f9';
+    this.ctx.shadowBlur = 10;
+    this.ctx.beginPath();
+    this.ctx.arc(15, -1, 3.5, 0, Math.PI * 2);
     this.ctx.fill();
 
     this.ctx.restore();
   }
 
+  // --- SONIC PULSE RINGS & SHOCKWAVES ---
   drawSonicRings() {
     for (const r of this.soundRings) {
       this.ctx.save();
@@ -990,10 +1618,18 @@ export class PuffGuardEngine {
       this.ctx.beginPath();
       this.ctx.arc(r.x, r.y, r.radius, 0, Math.PI * 2);
       this.ctx.stroke();
+
+      // Double-helix inner ripple
+      this.ctx.strokeStyle = `rgba(103, 232, 249, ${r.alpha * 0.6})`;
+      this.ctx.lineWidth = 2;
+      this.ctx.beginPath();
+      this.ctx.arc(r.x, r.y, Math.max(0, r.radius - 12), 0, Math.PI * 2);
+      this.ctx.stroke();
       this.ctx.restore();
     }
   }
 
+  // --- FIZZY AIR BUBBLES & STAR SPARKLES ---
   drawBubblesAndSparkles() {
     this.ctx.save();
     for (const b of this.bubbles) {
@@ -1001,13 +1637,53 @@ export class PuffGuardEngine {
       this.ctx.beginPath();
       this.ctx.arc(b.x, b.y, b.radius, 0, Math.PI * 2);
       this.ctx.fill();
+
+      // Bubble highlight glint
+      this.ctx.fillStyle = '#ffffff';
+      this.ctx.beginPath();
+      this.ctx.arc(b.x - b.radius * 0.35, b.y - b.radius * 0.35, b.radius * 0.28, 0, Math.PI * 2);
+      this.ctx.fill();
     }
 
     for (const s of this.sparkles) {
       this.ctx.fillStyle = s.color;
       this.ctx.globalAlpha = s.alpha;
-      this.ctx.fillRect(s.x, s.y, 3, 3);
+      this.ctx.beginPath();
+      this.ctx.arc(s.x, s.y, 2.5, 0, Math.PI * 2);
+      this.ctx.fill();
     }
+    this.ctx.restore();
+  }
+
+  // --- LAYER 4: FOREGROUND CINEMATIC BOKEH & KELP VIGNETTE ---
+  drawForegroundBokeh() {
+    this.ctx.save();
+    const time = Date.now() * 0.0014;
+
+    // Left Bottom Corner: Giant Out-of-Focus Kelp Fronds
+    this.ctx.fillStyle = 'rgba(6, 78, 59, 0.42)';
+    for (let k = 0; k < 3; k++) {
+      const kx = 10 + k * 28;
+      const sway = Math.sin(time + k * 0.8) * 16;
+      this.ctx.beginPath();
+      this.ctx.moveTo(kx - 15, this.baseH);
+      this.ctx.quadraticCurveTo(kx + sway, this.baseH - 120, kx - 10 + sway * 1.4, this.baseH - 220);
+      this.ctx.quadraticCurveTo(kx + 10 + sway, this.baseH - 100, kx + 25, this.baseH);
+      this.ctx.closePath();
+      this.ctx.fill();
+    }
+
+    // Right Bottom Corner: Deep Sea Fan Silhouette
+    this.ctx.fillStyle = 'rgba(15, 23, 42, 0.4)';
+    this.ctx.beginPath();
+    const rx = this.baseW - 20;
+    const rSway = Math.sin(time * 0.8) * 8;
+    this.ctx.moveTo(rx, this.baseH);
+    this.ctx.quadraticCurveTo(rx - 60 + rSway, this.baseH - 70, rx - 90 + rSway, this.baseH - 140);
+    this.ctx.quadraticCurveTo(rx - 40, this.baseH - 60, rx + 20, this.baseH);
+    this.ctx.closePath();
+    this.ctx.fill();
+
     this.ctx.restore();
   }
 }
