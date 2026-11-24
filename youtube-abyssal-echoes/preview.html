@@ -113,6 +113,59 @@
       }
     }
 
+    // 1. Keyframe Images
+    const crushedImg = new Image();
+    crushedImg.src = './assets/scene1_crushed_submarine.jpg';
+    let crushedLoaded = false;
+    crushedImg.onload = () => { crushedLoaded = true; };
+
+    const bgImg = new Image();
+    bgImg.src = './assets/scene1_keyframe.jpg';
+    let bgLoaded = false;
+    bgImg.onload = () => { bgLoaded = true; };
+
+    // Procedural Glass Cracks (Spiderweb lines)
+    const crackPoints = [
+      [{x: 360, y: 640}, {x: 220, y: 480}, {x: 120, y: 390}, {x: 50, y: 310}],
+      [{x: 360, y: 640}, {x: 480, y: 490}, {x: 580, y: 380}, {x: 670, y: 290}],
+      [{x: 360, y: 640}, {x: 310, y: 780}, {x: 230, y: 920}, {x: 140, y: 1080}],
+      [{x: 360, y: 640}, {x: 430, y: 790}, {x: 520, y: 950}, {x: 610, y: 1110}],
+      [{x: 360, y: 640}, {x: 200, y: 620}, {x: 80, y: 630}],
+      [{x: 360, y: 640}, {x: 520, y: 650}, {x: 660, y: 670}]
+    ];
+
+    function playImplosionSound() {
+      if (!audioCtx) return;
+      const now = audioCtx.currentTime;
+
+      // 1. Low frequency shockwave boom
+      const boom = audioCtx.createOscillator();
+      const boomGain = audioCtx.createGain();
+      boom.type = 'triangle';
+      boom.frequency.setValueAtTime(140, now);
+      boom.frequency.exponentialRampToValueAtTime(28, now + 1.6);
+      boomGain.gain.setValueAtTime(0.9, now);
+      boomGain.gain.exponentialRampToValueAtTime(0.001, now + 1.6);
+      boom.connect(boomGain);
+      boomGain.connect(audioCtx.destination);
+      boom.start(now);
+      boom.stop(now + 1.6);
+
+      // 2. Metal shear screech
+      const screech = audioCtx.createOscillator();
+      const screechGain = audioCtx.createGain();
+      screech.type = 'sawtooth';
+      screech.frequency.setValueAtTime(320, now);
+      screech.frequency.linearRampToValueAtTime(950, now + 0.4);
+      screech.frequency.exponentialRampToValueAtTime(80, now + 1.2);
+      screechGain.gain.setValueAtTime(0.4, now);
+      screechGain.gain.exponentialRampToValueAtTime(0.001, now + 1.2);
+      screech.connect(screechGain);
+      screechGain.connect(audioCtx.destination);
+      screech.start(now);
+      screech.stop(now + 1.2);
+    }
+
     function playSonarPing() {
       if (!audioCtx) return;
       const osc = audioCtx.createOscillator();
@@ -128,24 +181,82 @@
       osc.stop(audioCtx.currentTime + 0.8);
     }
 
-    // Background Image Keyframe
-    const bgImg = new Image();
-    bgImg.src = './assets/scene1_keyframe.jpg';
-    let bgLoaded = false;
-    bgImg.onload = () => { bgLoaded = true; };
-
     // Main Draw Function
     function render(t) {
-      if (bgLoaded && t < 15) {
-        // Subtle slow zoom-in on photorealistic keyframe
-        const scale = 1.0 + (t / 15) * 0.08;
+      ctx.save();
+
+      // Camera Trauma / Screen Shake during Implosion (0 <= t < 4)
+      if (t < 4.0) {
+        const trauma = Math.max(0, 1.0 - (t / 4.0));
+        const shakeMag = trauma * trauma * 24;
+        const shakeX = (Math.random() - 0.5) * shakeMag;
+        const shakeY = (Math.random() - 0.5) * shakeMag;
+        ctx.translate(shakeX, shakeY);
+      }
+
+      if (crushedLoaded && t < 4.0) {
+        // Scene 1: Catastrophic Submarine Implosion (Extreme Hook)
+        const scale = 1.0 + t * 0.05;
+        const sw = canvas.width / scale;
+        const sh = canvas.height / scale;
+        const sx = (canvas.width - sw) / 2;
+        const sy = (canvas.height - sh) / 2;
+        ctx.drawImage(crushedImg, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+        // Flashing Emergency Crimson Strobe
+        const strobe = Math.sin(t * 14) > 0 ? 0.35 : 0.08;
+        ctx.fillStyle = `rgba(239, 68, 68, ${strobe})`;
+        ctx.fillRect(0, 0, canvas.width, canvas.height);
+
+        // Exploding Spiderweb Cracks across Viewport
+        const crackProgress = Math.min(1.0, t / 1.8);
+        ctx.strokeStyle = 'rgba(255, 255, 255, 0.9)';
+        ctx.lineWidth = 3;
+        ctx.shadowColor = '#06b6d4';
+        ctx.shadowBlur = 10;
+        crackPoints.forEach(branch => {
+          ctx.beginPath();
+          ctx.moveTo(branch[0].x, branch[0].y);
+          for (let i = 1; i < branch.length; i++) {
+            if (i / branch.length <= crackProgress) {
+              ctx.lineTo(branch[i].x, branch[i].y);
+            }
+          }
+          ctx.stroke();
+        });
+        ctx.shadowBlur = 0;
+
+        // Emergency HUD Warning Overlay
+        ctx.fillStyle = '#ef4444';
+        ctx.font = '900 22px monospace';
+        ctx.fillText('⚠️ HULL BREACH DETECTED', 60, 140);
+        ctx.font = '14px monospace';
+        ctx.fillStyle = '#fca5a5';
+        ctx.fillText('PRESSURE: 1,120 ATM (16,460 PSI)', 60, 168);
+        ctx.fillText('CRITICAL STRUCTURAL COLLAPSE', 60, 190);
+
+      } else if (bgLoaded && t >= 4.0 && t < 15.0) {
+        // Scene 2: Submarine Probe Descending into the Trench Abyss
+        const scale = 1.0 + ((t - 4.0) / 11.0) * 0.08;
         const sw = canvas.width / scale;
         const sh = canvas.height / scale;
         const sx = (canvas.width - sw) / 2;
         const sy = (canvas.height - sh) / 2;
         ctx.drawImage(bgImg, sx, sy, sw, sh, 0, 0, canvas.width, canvas.height);
+
+        // Submarine Spotlights
+        const spotlightX = canvas.width / 2 + Math.sin(t * 0.8) * 40;
+        const spotGrad = ctx.createRadialGradient(spotlightX, 100, 20, spotlightX, 450, 400);
+        spotGrad.addColorStop(0, 'rgba(6, 182, 212, 0.25)');
+        spotGrad.addColorStop(0.5, 'rgba(6, 182, 212, 0.08)');
+        spotGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
+        ctx.fillStyle = spotGrad;
+        ctx.beginPath();
+        ctx.arc(spotlightX, 450, 400, 0, Math.PI * 2);
+        ctx.fill();
+
       } else {
-        // Deep Oceanic Gradient & Trench Silhouettes
+        // Scene 3 & 4: Pitch Black Abyss, Serpentine Organism, & Eye
         const grad = ctx.createLinearGradient(0, 0, 0, canvas.height);
         grad.addColorStop(0, '#020617');
         grad.addColorStop(0.6, '#030a1c');
@@ -153,17 +264,6 @@
         ctx.fillStyle = grad;
         ctx.fillRect(0, 0, canvas.width, canvas.height);
       }
-
-      // 2. Submarine Spotlights
-      const spotlightX = canvas.width / 2 + Math.sin(t * 0.8) * 40;
-      const spotGrad = ctx.createRadialGradient(spotlightX, 100, 20, spotlightX, 450, 400);
-      spotGrad.addColorStop(0, 'rgba(6, 182, 212, 0.25)');
-      spotGrad.addColorStop(0.5, 'rgba(6, 182, 212, 0.08)');
-      spotGrad.addColorStop(1, 'rgba(0, 0, 0, 0)');
-      ctx.fillStyle = spotGrad;
-      ctx.beginPath();
-      ctx.arc(spotlightX, 450, 400, 0, Math.PI * 2);
-      ctx.fill();
 
       // 3. Marine Snow Particles
       ctx.fillStyle = '#67e8f9';
@@ -253,11 +353,13 @@
       ctx.font = '14px monospace';
       ctx.fillText(`DEPTH: ${(10850 + Math.floor(t * 4)).toLocaleString()} M`, 56, 70);
       ctx.fillText(`SONAR: ACTIVE (HADAL-Z)`, 56, 92);
+      ctx.restore();
     }
 
     // Playback Loop
     let lastStamp = 0;
     let lastSonarPing = 0;
+    let hasPlayedImplosion = false;
 
     function step(stamp) {
       if (!lastStamp) lastStamp = stamp;
@@ -266,18 +368,28 @@
 
       if (isPlaying) {
         currentTime += dt;
+
+        // Trigger Implosion sound at start
+        if (currentTime < 0.2 && !hasPlayedImplosion) {
+          playImplosionSound();
+          hasPlayedImplosion = true;
+        }
+
         if (currentTime >= TOTAL_DURATION) {
           currentTime = 0;
           isPlaying = false;
+          hasPlayedImplosion = false;
           btnPlay.textContent = '▶ Play Preview';
           if (mediaRecorder && mediaRecorder.state === 'recording') {
             mediaRecorder.stop();
           }
         }
 
-        // Sonar Ping every 3 seconds
-        if (currentTime - lastSonarPing > 3.0) {
+        // Sonar Ping every 3 seconds after implosion
+        if (currentTime > 4.0 && currentTime - lastSonarPing > 3.0) {
           playSonarPing();
+          lastSonarPing = currentTime;
+        }
           lastSonarPing = currentTime;
         }
 
@@ -302,6 +414,9 @@
     // Controls
     btnPlay.addEventListener('click', () => {
       initAudio();
+      if (!isPlaying && currentTime === 0) {
+        hasPlayedImplosion = false;
+      }
       isPlaying = !isPlaying;
       btnPlay.textContent = isPlaying ? '⏸ Pause' : '▶ Play Preview';
     });
@@ -309,6 +424,7 @@
     btnRecord.addEventListener('click', () => {
       initAudio();
       currentTime = 0;
+      hasPlayedImplosion = false;
       isPlaying = true;
       btnPlay.textContent = '⏸ Pause';
       btnRecord.classList.add('recording');

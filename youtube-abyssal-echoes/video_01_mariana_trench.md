@@ -9,7 +9,7 @@
 
 | Time | Visual Description | On-Screen Captions (Yellow/Cyan) | Voiceover Narration | Sound FX (SFX) |
 | :--- | :--- | :--- | :--- | :--- |
-| **0:00 - 0:04** | Submarine floodlights cut through pitch-black water. Rapid zoom into the trench abyss. | `11,000 METERS UNDERWATER ⚠️` | *"At 11,000 meters beneath the Pacific, water pressure can flatten a titanium submarine in seconds... but something is alive down here."* | Submarine metal groaning + deep oceanic sub-bass rumble. |
+| **0:00 - 0:04** | **Catastrophic Implosion Hook:** Thick titanium research submersible buckling violently under 1,100 ATM. Viewport glass fractures in spiderweb cracks. Flashing crimson emergency sirens. Cavitation shockwaves blast outward into black water. | `⚠️ PRESSURE COLLAPSE: 16,400 PSI` | *"At 11,000 meters beneath the Pacific, water pressure can flatten a titanium submarine in seconds... but something is alive down here."* | Violent metal shearing screech + loud glass crack + deep hydraulic implosion boom. |
 | **0:04 - 0:15** | Thermal HUD overlay scanning jagged Mariana Trench rock face. Sonar beam scanning. | `Mariana Trench • 36,000 ft Deep` | *"In 2021, an unmanned deep-sea probe reached the Hadal zone. Its sonar sensors began picking up rhythmic echoes bouncing off the trench wall."* | Hydrophone sonar ping (echoing every 2.0s). |
 | **0:15 - 0:30** | A massive, glowing serpent-like shadow with cyan photophores glides past camera edge. | `Length: ~15 Meters • Unclassified` | *"No known vertebrate should survive this pressure. Yet, for 47 seconds, the cameras captured a serpentine silhouette with glowing blue light clusters... measuring over 15 meters long."* | Deep water displacement whoosh + electronic interference hum. |
 | **0:30 - 0:45** | Audio waveform graphic pulsing violently against trench wall backdrop. | `NOAA Frequency: "Upsweep" Anomaly` | *"Scientists at NOAA compared the movement to the legendary 1997 'Upsweep' sound—an acoustic frequency recorded thousands of miles across the Pacific that has never been explained."* | Eerie high-to-low acoustic frequency sweep. |
@@ -34,3 +34,18 @@
 * **TikTok Title & Caption:** Cameras weren't supposed to catch this at 36,000 ft... 😳 Wait for the sonar audio at 0:30 #ocean #deepsea #thalassophobia #mystery #unexplained #marianatrench #foryou #fyp
 * **Instagram Reels Caption:** 11,000 meters beneath the Pacific. 95% of our oceans remain unexplored. What do you think this organism was? 💭 Follow @abyssal.echoes for Part 2.  
 * **Hashtags:** `#deepsea #thalassophobia #marianatrench #oceanmysteries #unexplained #seamonster #abyss #scaryfacts #oceanlife`
+
+---
+
+## 4. Gemini Omni 1.2 Flash Video Prompts (`gemini-omni-1.2-flash`)
+
+### Scene 1 (0:00 - 0:04): Submarine Catastrophic Implosion Video
+```text
+Cinematic 9:16 vertical video. Extreme high-stakes disaster shot at 11,000 meters depth in the Mariana Trench. A heavy research submersible suffers catastrophic hull implosion under immense hydrostatic pressure. Thick acrylic viewport glass fractures violently in spiderweb cracks. The titanium hull buckles inward with explosive cavitation bubbles and water jets piercing the dark void. Flashing red interior emergency sirens cast ominous crimson shadows into the pitch-black ocean. Hyper-realistic physics, cinematic disaster VFX, volumetric underwater lighting, 4K resolution.
+```
+
+### Scene 2 (0:15 - 0:30): Colossal Serpentine Anomaly Video
+```text
+Cinematic 9:16 vertical video. Mariana Trench abyss at 11,000 meters. Submersible exterior lights flicker weakly against an endless black void. Out of the darkness, an enormous ancient serpentine creature glides across the camera frame, its body adorned with rhythmic glowing cyan and bioluminescent electric-blue light clusters. Slow, majestic, terrifying scale. Photorealistic, 4K resolution.
+```
+
